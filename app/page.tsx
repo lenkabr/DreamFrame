@@ -32,7 +32,7 @@ export default function Home() {
   }
 
   return <main>
-    <header className="site-header"><a className="brand" href="#top" aria-label="Dreamframe home"><span className="brand-mark" />Dreamframe</a><span className="tagline">Every feeling has a film.</span><a className="about" href="#about">About <span aria-hidden="true">↗</span></a></header>
+    <header className="site-header"><a className="brand" href="#top" aria-label="DreamFrame home"><img className="brand-logo" src="./dreamframe-logo-white.svg" alt="" /><span>DreamFrame</span></a><span className="tagline">Every feeling has a film.</span></header>
     <section className="hero" id="top">
       <p className="eyebrow"><span /> One film. Chosen for you.</p>
       <h1>What do you feel<br />like <em>watching?</em></h1>
