@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48" role="img" aria-label="DreamFrame filmstrip DF logo">
+  <path d="M2 4H19C31 4 38 12 38 24S31 44 19 44H2Z" fill="white"/>
+  <path d="M12 13H18C25 13 29 17.2 29 24S25 35 18 35H12Z" fill="#090909"/>
+  <rect x="5" y="10" width="4" height="5" rx="1.2" fill="#090909"/>
+  <rect x="5" y="17.5" width="4" height="5" rx="1.2" fill="#090909"/>
+  <rect x="5" y="25" width="4" height="5" rx="1.2" fill="#090909"/>
+  <rect x="5" y="32.5" width="4" height="5" rx="1.2" fill="#090909"/>
+  <path d="M31 4H62L59 13H43V21H57L54 30H43V44L31 48Z" fill="white"/>
+  <circle cx="55" cy="38" r="3.8" fill="#ef4b3f"/>
+</svg>
