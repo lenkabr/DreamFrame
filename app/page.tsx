@@ -62,6 +62,6 @@ export default function Home() {
         </div>
       </article>
     </section>}
-    <footer id="about"><span>Dreamframe</span><p>A calmer way to choose what to watch.</p><p>Made for the feeling after the credits.</p></footer>
+    <footer id="about"><span>DreamFrame</span><p>A calmer way to choose what to watch.</p><p>Made for the feeling after the credits.</p></footer>
   </main>;
 }
