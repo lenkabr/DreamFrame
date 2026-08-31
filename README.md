@@ -9,8 +9,10 @@ DreamFrame is a movie recommendation prototype designed to replace endless brows
 ## What the prototype currently does
 
 - Accepts a mood or a description of what you want to feel
-- Considers selected favorite films
-- Chooses one recommendation from a small curated collection
+- Understands emotional intent using OpenAI's GPT-5 Mini model
+- Recommends films dynamically instead of choosing from a fixed local list
+- Supports mood-based discovery, films similar to a title, and favorite-film taste references
+- Avoids recommending films already listed as favorites or previously shown
 - Retrieves real movie details, genres, runtime, synopsis, and poster artwork from TMDB
 - Presents the result in a dark, minimal interface
 
@@ -20,7 +22,7 @@ DreamFrame is currently in progress and is not a finished commercial application
 
 ## How it works
 
-The current prototype demonstrates the main recommendation experience using a small curated movie collection. DreamFrame handles the matching experience, while TMDB supplies accurate movie information and poster artwork. A protected backend route keeps the TMDB credential out of the browser.
+The current prototype uses OpenAI's GPT-5 Mini through the Responses API to interpret what the user wants and select a fitting real film. TMDB verifies the title and supplies accurate movie information and poster artwork. For Similar mode, TMDB first provides verified related films and the model chooses the strongest match. Protected backend routes keep both API credentials out of the browser.
 
 ## Project links
 
@@ -30,7 +32,7 @@ The current prototype demonstrates the main recommendation experience using a sm
 
 ## Technology
 
-Next.js, React, TypeScript, TMDB API, and Vercel.
+Next.js, React, TypeScript, OpenAI Responses API with GPT-5 Mini, TMDB API, and Vercel.
 
 ## Run locally
 
@@ -39,7 +41,14 @@ npm install
 npm run dev
 ```
 
-Create a `.env.local` file and add your own `TMDB_API_KEY` before using live movie data. Never commit this file or the key to GitHub.
+Create a `.env.local` file with your own keys before using the recommendation engine:
+
+```text
+TMDB_API_KEY=your_tmdb_key
+OPENAI_API_KEY=your_openai_key
+```
+
+Never commit this file or either key to GitHub.
 
 ---
 
