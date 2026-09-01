@@ -48,6 +48,6 @@ export default function StoryPage() {
       </div>
     </article>
 
-    <footer><span>DreamFrame</span><p>A calmer way to choose what to watch.</p><p>Made for the feeling after the credits.</p></footer>
+    <footer><span>DreamFrame</span><p>A calmer way to choose what to watch.</p><p><Link className="privacy-link" href="/privacy">Privacy</Link></p></footer>
   </main>;
 }
