@@ -3,6 +3,7 @@ import './globals.css';
 import './recommendation.css';
 import './story.css';
 import './limits.css';
+import './privacy.css';
 
 export const metadata: Metadata = {
   title: 'Dreamframe — Every feeling has a film',
