@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import './recommendation.css';
 import './story.css';
+import './limits.css';
 
 export const metadata: Metadata = {
   title: 'Dreamframe — Every feeling has a film',
