@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
 
   if (!apiKey) return NextResponse.json({ error: 'TMDB is not configured.' }, { status: 500 });
   if (!title && !query) return NextResponse.json({ error: 'A movie title is required.' }, { status: 400 });
+  if ((query || title || '').length > 100) return NextResponse.json({ error: 'Please keep movie titles under 100 characters.' }, { status: 400 });
 
   try {
     const searchUrl = new URL(`${TMDB_API}/search/movie`);
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
     searchUrl.searchParams.set('query', query || title || '');
     searchUrl.searchParams.set('include_adult', 'false');
     searchUrl.searchParams.set('language', 'en-US');
-    const searchResponse = await fetch(searchUrl, { cache: 'no-store' });
+    const searchResponse = await fetch(searchUrl, { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
     if (!searchResponse.ok) throw new Error(`TMDB search failed: ${searchResponse.status}`);
 
     const searchData = await searchResponse.json() as { results: SearchResult[] };
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     const detailsUrl = new URL(`${TMDB_API}/movie/${result.id}`);
     detailsUrl.searchParams.set('api_key', apiKey);
-    const detailsResponse = await fetch(detailsUrl, { cache: 'no-store' });
+    const detailsResponse = await fetch(detailsUrl, { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
     if (!detailsResponse.ok) throw new Error(`TMDB details failed: ${detailsResponse.status}`);
     const movie = await detailsResponse.json() as MovieDetails;
 
