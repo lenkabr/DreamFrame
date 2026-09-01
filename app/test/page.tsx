@@ -40,6 +40,7 @@ export default function TestPage() {
 
   async function runTest(test: (typeof TESTS)[number]) {
     setResults((current) => ({ ...current, [test.id]: { ...current[test.id], loading: true, error: undefined } }));
+    const previousTitle = results[test.id]?.movie?.title;
     try {
       const response = await fetch('/api/recommend', {
         method: 'POST',
@@ -48,7 +49,7 @@ export default function TestPage() {
           mode: test.mode,
           query: test.query,
           favorites: test.favorites ?? [],
-          excludedTitles: results[test.id]?.movie?.title ? [results[test.id].movie.title] : [],
+          excludedTitles: previousTitle ? [previousTitle] : [],
         }),
       });
       const data = await response.json() as Movie & { error?: string };
