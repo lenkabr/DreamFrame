@@ -2,56 +2,34 @@
 
 **Every feeling has a film.**
 
-DreamFrame is a movie recommendation prototype designed to replace endless browsing with one thoughtful film recommendation. It uses your current mood, the feeling you want, and movies you already love to suggest a film and explain why it fits the moment.
+DreamFrame is a work-in-progress movie recommendation prototype. It is designed for the moments when you know how you want a film to make you feel, but do not know what to watch.
 
-## [Open the live DreamFrame prototype](https://dream-frame-eight.vercel.app/)
+Instead of presenting a large catalogue, DreamFrame recommends one film and explains why it fits your mood, the emotional qualities of another movie, or the taste reflected in your favorites.
 
-## What the prototype currently does
+## [Try the live prototype](https://dream-frame-eight.vercel.app/)
 
-- Accepts a mood or a description of what you want to feel
-- Understands emotional intent using OpenAI's GPT-5 Mini model
-- Recommends films dynamically instead of choosing from a fixed local list
-- Supports mood-based discovery, films similar to a title, and favorite-film taste references
-- Lets users select the exact film from TMDB search results with a poster preview and release year
-- Remembers Loved, Not for me, and Already seen feedback in the user's browser
-- Avoids recommending films already listed as favorites or previously shown
-- Filters out films rated below 5/10 on TMDB unless someone explicitly asks for a deliberately bad movie
-- Retrieves real movie details, genres, runtime, synopsis, and poster artwork from TMDB
-- Presents the result in a dark, minimal interface
+## Why I am building it
 
-## Prototype status
+I often look for movies by the feeling, theme, or state of mind I want to explore—not simply by genre or popularity. I am building DreamFrame as a personal, non-commercial learning project and as an experiment in making film discovery feel more thoughtful and emotionally relevant.
 
-DreamFrame is currently in progress and is not a finished commercial application. I am building it to explore a more personal, emotionally relevant way of discovering films—one that focuses on how someone feels rather than asking them to browse large catalogs or conventional genre lists.
+## What the prototype currently offers
 
-## How it works
+- One considered movie recommendation at a time
+- Discovery based on a mood, a similar film, or favorite films
+- Recommendations guided by emotional tone, themes, and how a film may leave you feeling
+- Exact film selection with poster previews and release years
+- Real film details and poster artwork provided by TMDB
+- Lightweight taste feedback remembered in the same browser
+- A dark, minimal interface
 
-The current prototype uses OpenAI's GPT-5 Mini through the Responses API to interpret what the user wants and select a fitting real film. TMDB powers the movie picker, verifies titles, and supplies accurate movie information and poster artwork. For Similar mode, the selected TMDB movie ID identifies the exact adaptation before TMDB provides related candidates and the model chooses the strongest match. Lightweight taste feedback is stored locally in the browser and influences later recommendations on that device. Protected backend routes keep both API credentials out of the browser.
+## Current prototype limits
 
-## Project links
+- Up to 5 recommendations per browser
+- Up to 5 favorite films in one request
+- Mood descriptions of up to 300 characters
+- Taste feedback and the usage count stay in the browser; there are currently no user accounts
 
-- [Live application on Vercel](https://dream-frame-eight.vercel.app/)
-- [Source code on GitHub](https://github.com/lenkabr/DreamFrame)
-- [Static GitHub Pages version](https://lenkabr.github.io/DreamFrame/)
-
-## Technology
-
-Next.js, React, TypeScript, OpenAI Responses API with GPT-5 Mini, TMDB API, and Vercel.
-
-## Run locally
-
-```bash
-npm install
-npm run dev
-```
-
-Create a `.env.local` file with your own keys before using the recommendation engine:
-
-```text
-TMDB_API_KEY=your_tmdb_key
-OPENAI_API_KEY=your_openai_key
-```
-
-Never commit this file or either key to GitHub.
+DreamFrame is still in progress. Features, recommendations, limits, and the experience may change as the prototype develops.
 
 ---
 
