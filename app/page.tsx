@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 
 type Mode = 'mood' | 'similar' | 'favorites';
 type RecommendedMovie = { id: number; title: string; year: string; runtime: string; genres: string[]; overview: string; posterUrl: string | null; why: string; themes: string[]; feelings: string[] };
@@ -115,7 +116,7 @@ export default function Home() {
   }
 
   return <main>
-    <header className="site-header"><a className="brand" href="#top" aria-label="DreamFrame home"><img className="brand-logo" src="./dreamframe-logo-white.svg" alt="" /><span>DreamFrame</span></a><span className="tagline">Every feeling has a film.</span></header>
+    <header className="site-header"><a className="brand" href="#top" aria-label="DreamFrame home"><img className="brand-logo" src="./dreamframe-logo-white.svg" alt="" /><span>DreamFrame</span></a><span className="tagline">Every feeling has a film.</span><nav className="site-nav" aria-label="Main navigation"><Link href="/story">The story behind DreamFrame <span aria-hidden="true">↗</span></Link></nav></header>
     <section className="hero" id="top">
       <p className="eyebrow"><span /> One film. Chosen for you.</p>
       <h1>What do you feel<br />like <em>watching?</em></h1>
