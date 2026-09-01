@@ -21,6 +21,7 @@ export default function Home() {
   const [seenIds, setSeenIds] = useState<number[]>([]);
   const [seenTitles, setSeenTitles] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [replacementMessage, setReplacementMessage] = useState('');
   const [error, setError] = useState('');
   const [taste, setTaste] = useState<TasteEntry[]>(() => {
     if (typeof window === 'undefined') return [];
@@ -87,11 +88,18 @@ export default function Home() {
     }
   }
 
-  function rememberMovie(status: TasteStatus) {
-    if (!movie) return;
+  async function rememberMovie(status: TasteStatus) {
+    if (!movie || loading) return;
     const updatedTaste = [...taste.filter((entry) => entry.id !== movie.id), { id: movie.id, title: movie.title, status, updatedAt: Date.now() }];
     setTaste(updatedTaste);
-    if (status !== 'loved') void recommend(true, updatedTaste);
+    if (status !== 'loved') {
+      setReplacementMessage(status === 'seen' ? 'Already seen — finding something new…' : 'Got it — finding a better match…');
+      try {
+        await recommend(true, updatedTaste);
+      } finally {
+        setReplacementMessage('');
+      }
+    }
   }
 
   function chooseMovie(suggestion: MovieSuggestion) {
@@ -137,14 +145,15 @@ export default function Home() {
           <div className="tag-columns"><div><p className="section-label">Themes</p><div className="soft-tags">{movie.themes.map((tag) => <span key={tag}>{tag}</span>)}</div></div><div><p className="section-label">You’ll probably leave feeling</p><div className="feeling-list">{movie.feelings.map((tag) => <span key={tag}>✦ {tag}</span>)}</div></div></div>
           <div className="taste-actions" aria-label="Remember this recommendation">
             <p className="section-label">Help DreamFrame remember your taste</p>
+            {replacementMessage && <div className="replacement-status" role="status"><span aria-hidden="true" />{replacementMessage}</div>}
             <div className="taste-buttons">
-              <button type="button" className={currentTaste?.status === 'loved' ? 'selected' : ''} onClick={() => rememberMovie('loved')}>♡ Love this</button>
-              <button type="button" onClick={() => rememberMovie('not-for-me')}>Not for me</button>
-              <button type="button" onClick={() => rememberMovie('seen')}>Already seen</button>
+              <button type="button" disabled={loading} className={currentTaste?.status === 'loved' ? 'selected' : ''} onClick={() => rememberMovie('loved')}>♡ Love this</button>
+              <button type="button" disabled={loading} onClick={() => rememberMovie('not-for-me')}>Not for me</button>
+              <button type="button" disabled={loading} onClick={() => rememberMovie('seen')}>Already seen</button>
             </div>
             <small>{currentTaste?.status === 'loved' ? 'Saved. DreamFrame will use this as a taste signal.' : 'Remembered only in this browser.'}</small>
           </div>
-          <div className="actions"><button type="button" className="primary-action" onClick={() => recommend(true)}>Try another <span>→</span></button></div>
+          <div className="actions"><button type="button" className="primary-action" disabled={loading} onClick={() => recommend(true)}>{loading ? 'Finding another film…' : 'Try another'} <span>→</span></button></div>
         </div>
       </article>
     </section>}
