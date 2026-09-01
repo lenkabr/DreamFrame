@@ -159,7 +159,7 @@ export default function Home() {
     <section className="hero" id="top">
       <p className="eyebrow"><span /> One film. Chosen for you.</p>
       <h1>What do you feel<br />like <em>watching?</em></h1>
-      <p className="intro">Describe a feeling, how you want to feel, or the kind of story you’d like to see. We’ll find the one film worth your evening.</p>
+      <p className="intro">Describe a feeling, your mood, how you’d like to feel, or the kind of story you’d like to see. We’ll find the one film worth your evening.</p>
       <form className="search-card" onSubmit={(event) => { event.preventDefault(); recommend(false); }}>
         <div className="tabs" role="tablist" aria-label="Recommendation type">
           {(['mood', 'similar', 'favorites'] as Mode[]).map((item) => <button key={item} type="button" role="tab" aria-selected={mode === item} className={mode === item ? 'active' : ''} onClick={() => { setMode(item); setQuery(''); setSelectedMovie(null); setSuggestions([]); }}>{item === 'mood' ? 'How I feel' : item === 'similar' ? 'Similar to' : 'My favorites'}</button>)}
