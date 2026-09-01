@@ -12,6 +12,7 @@ type RequestBody = {
   excludedTitles?: string[];
   sourceTitle?: string;
   candidateTitles?: string[];
+  sourceId?: number;
 };
 
 type Intent = {
@@ -111,13 +112,21 @@ export async function POST(request: NextRequest) {
     let sourceTitle = '';
     let candidateTitles: string[] = [];
     if (body.mode === 'similar') {
-      const sourceSearchUrl = new URL(`${TMDB_API}/search/movie`);
-      sourceSearchUrl.searchParams.set('api_key', tmdbKey);
-      sourceSearchUrl.searchParams.set('query', query);
-      sourceSearchUrl.searchParams.set('include_adult', 'false');
-      sourceSearchUrl.searchParams.set('language', 'en-US');
-      const sourceSearch = await tmdbJson<{ results: TmdbMovie[] }>(sourceSearchUrl);
-      const source = sourceSearch.results[0];
+      let source: TmdbMovie | undefined;
+      if (body.sourceId) {
+        const sourceUrl = new URL(`${TMDB_API}/movie/${body.sourceId}`);
+        sourceUrl.searchParams.set('api_key', tmdbKey);
+        sourceUrl.searchParams.set('language', 'en-US');
+        source = await tmdbJson<TmdbMovie>(sourceUrl);
+      } else {
+        const sourceSearchUrl = new URL(`${TMDB_API}/search/movie`);
+        sourceSearchUrl.searchParams.set('api_key', tmdbKey);
+        sourceSearchUrl.searchParams.set('query', query);
+        sourceSearchUrl.searchParams.set('include_adult', 'false');
+        sourceSearchUrl.searchParams.set('language', 'en-US');
+        const sourceSearch = await tmdbJson<{ results: TmdbMovie[] }>(sourceSearchUrl);
+        source = sourceSearch.results[0];
+      }
       if (!source) return NextResponse.json({ error: 'We could not find that film. Check the title and try again.' }, { status: 404 });
       sourceTitle = source.title;
 
