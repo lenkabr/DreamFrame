@@ -1,10 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type Mode = 'mood' | 'similar' | 'favorites';
 type RecommendedMovie = { id: number; title: string; year: string; runtime: string; genres: string[]; overview: string; posterUrl: string | null; why: string; themes: string[]; feelings: string[] };
+type TasteStatus = 'loved' | 'not-for-me' | 'seen';
+type TasteEntry = { id: number; title: string; status: TasteStatus; updatedAt: number };
 const prompts: Record<Mode, string> = { mood: 'I want something that makes me appreciate life...', similar: 'Lost in Translation', favorites: 'Add a film you love' };
+const TASTE_STORAGE_KEY = 'dreamframe-taste-v1';
 
 export default function Home() {
   const [mode, setMode] = useState<Mode>('mood');
@@ -15,10 +18,25 @@ export default function Home() {
   const [seenTitles, setSeenTitles] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [taste, setTaste] = useState<TasteEntry[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try { return JSON.parse(localStorage.getItem(TASTE_STORAGE_KEY) || '[]') as TasteEntry[]; } catch { return []; }
+  });
 
-  async function recommend(next = false) {
+  useEffect(() => {
+    localStorage.setItem(TASTE_STORAGE_KEY, JSON.stringify(taste));
+  }, [taste]);
+
+  const currentTaste = useMemo(() => taste.find((entry) => entry.id === movie?.id), [movie?.id, taste]);
+
+  async function recommend(next = false, tasteOverride?: TasteEntry[]) {
+    const rememberedTaste = tasteOverride ?? taste;
     const addedFavorite = mode === 'favorites' ? query.trim() : '';
     const requestFavorites = addedFavorite && !favorites.includes(addedFavorite) ? [...favorites, addedFavorite] : favorites;
+    const lovedTitles = rememberedTaste.filter((entry) => entry.status === 'loved').map((entry) => entry.title);
+    const tasteFavorites = Array.from(new Set([...requestFavorites, ...lovedTitles]));
+    const rememberedIds = rememberedTaste.map((entry) => entry.id);
+    const rememberedTitles = rememberedTaste.map((entry) => entry.title);
     if (addedFavorite && !favorites.includes(addedFavorite)) { setFavorites(requestFavorites); setQuery(''); }
     setLoading(true);
     setError('');
@@ -29,9 +47,9 @@ export default function Home() {
         body: JSON.stringify({
           mode,
           query: mode === 'favorites' ? '' : query,
-          favorites: requestFavorites,
-          excludeIds: next ? seenIds : [],
-          excludedTitles: next ? seenTitles : [],
+          favorites: tasteFavorites,
+          excludeIds: Array.from(new Set([...rememberedIds, ...(next ? seenIds : [])])),
+          excludedTitles: Array.from(new Set([...rememberedTitles, ...(next ? seenTitles : [])])),
         }),
       });
       const data = await response.json() as RecommendedMovie & { error?: string };
@@ -46,6 +64,13 @@ export default function Home() {
       setError(caught instanceof Error ? caught.message : 'Could not load the movie.');
       setLoading(false);
     }
+  }
+
+  function rememberMovie(status: TasteStatus) {
+    if (!movie) return;
+    const updatedTaste = [...taste.filter((entry) => entry.id !== movie.id), { id: movie.id, title: movie.title, status, updatedAt: Date.now() }];
+    setTaste(updatedTaste);
+    if (status !== 'loved') void recommend(true, updatedTaste);
   }
 
   return <main>
@@ -77,7 +102,16 @@ export default function Home() {
           <p className="movie-source">Movie data and artwork provided by <a href="https://www.themoviedb.org/" target="_blank" rel="noreferrer">TMDB</a>.</p>
           <div className="why"><p className="section-label">Why this matches</p><p>{movie.why}</p></div>
           <div className="tag-columns"><div><p className="section-label">Themes</p><div className="soft-tags">{movie.themes.map((tag) => <span key={tag}>{tag}</span>)}</div></div><div><p className="section-label">You’ll probably leave feeling</p><div className="feeling-list">{movie.feelings.map((tag) => <span key={tag}>✦ {tag}</span>)}</div></div></div>
-          <div className="actions"><button type="button" className="primary-action" onClick={() => recommend(true)}>Try another <span>→</span></button><button type="button" className="secondary-action" onClick={() => recommend(true)}>I’ve seen it</button></div>
+          <div className="taste-actions" aria-label="Remember this recommendation">
+            <p className="section-label">Help DreamFrame remember your taste</p>
+            <div className="taste-buttons">
+              <button type="button" className={currentTaste?.status === 'loved' ? 'selected' : ''} onClick={() => rememberMovie('loved')}>♡ Love this</button>
+              <button type="button" onClick={() => rememberMovie('not-for-me')}>Not for me</button>
+              <button type="button" onClick={() => rememberMovie('seen')}>Already seen</button>
+            </div>
+            <small>{currentTaste?.status === 'loved' ? 'Saved. DreamFrame will use this as a taste signal.' : 'Remembered only in this browser.'}</small>
+          </div>
+          <div className="actions"><button type="button" className="primary-action" onClick={() => recommend(true)}>Try another <span>→</span></button></div>
         </div>
       </article>
     </section>}
