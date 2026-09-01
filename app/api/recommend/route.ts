@@ -60,6 +60,31 @@ const intentSchema = {
 const GENRES = 'Action 28, Adventure 12, Animation 16, Comedy 35, Crime 80, Documentary 99, Drama 18, Family 10751, Fantasy 14, History 36, Horror 27, Music 10402, Mystery 9648, Romance 10749, Science Fiction 878, Thriller 53, War 10752, Western 37';
 const MINIMUM_RATING = 5;
 const BAD_MOVIE_REQUEST = /\b(so[ -]?bad[ -]?it['’]?s[ -]?good|deliberately bad|terrible movie|awful movie|worst movie|trash(?:y)? movie|laugh(?:ing)? at (?:how )?bad)\b/i;
+const SERVER_REQUEST_LIMIT = 5;
+const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
+type RateEntry = { count: number; resetAt: number };
+const rateLimitStore = new Map<string, RateEntry>();
+
+function clientAddress(request: NextRequest) {
+  return request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim()
+    || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || request.headers.get('x-real-ip')
+    || 'unknown';
+}
+
+function consumeRequestAllowance(request: NextRequest) {
+  if (process.env.NODE_ENV !== 'production') return { allowed: true, retryAfter: 0 };
+  const now = Date.now();
+  const key = clientAddress(request);
+  const current = rateLimitStore.get(key);
+  if (!current || current.resetAt <= now) {
+    rateLimitStore.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, retryAfter: 0 };
+  }
+  if (current.count >= SERVER_REQUEST_LIMIT) return { allowed: false, retryAfter: Math.ceil((current.resetAt - now) / 1000) };
+  current.count += 1;
+  return { allowed: true, retryAfter: 0 };
+}
 
 function permitsLowRating(query: string) {
   return BAD_MOVIE_REQUEST.test(query);
@@ -69,6 +94,7 @@ async function analyzeIntent(apiKey: string, body: RequestBody): Promise<Intent>
   const response = await fetch(OPENAI_API, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(25_000),
     body: JSON.stringify({
       model: 'gpt-5-mini',
       store: false,
@@ -98,7 +124,7 @@ Treat every negative instruction as a hard constraint: if the user says not viol
 }
 
 async function tmdbJson<T>(url: URL): Promise<T> {
-  const response = await fetch(url, { cache: 'no-store' });
+  const response = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
   if (!response.ok) throw new Error(`TMDB request failed: ${response.status}`);
   return response.json() as Promise<T>;
 }
@@ -111,9 +137,15 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as RequestBody;
     const query = body.query?.trim() ?? '';
-    const favorites = (body.favorites ?? []).filter(Boolean).slice(0, 8);
+    if (query.length > 300) return NextResponse.json({ error: 'Please keep your request under 300 characters.' }, { status: 400 });
+    if ((body.favorites ?? []).length > 5) return NextResponse.json({ error: 'You can add up to 5 favorite films.' }, { status: 400 });
+    const favorites = (body.favorites ?? []).filter(Boolean).slice(0, 5);
     const allowLowRating = permitsLowRating(query);
     if (!query && favorites.length === 0) return NextResponse.json({ error: 'Tell us how you feel or add a film you love.' }, { status: 400 });
+    const allowance = consumeRequestAllowance(request);
+    if (!allowance.allowed) {
+      return NextResponse.json({ error: 'DreamFrame is still a work-in-progress prototype. You’ve reached the limit of 5 recommendations. Thank you for trying it.' }, { status: 429, headers: { 'Retry-After': String(allowance.retryAfter) } });
+    }
 
     let sourceTitle = '';
     let candidateTitles: string[] = [];
