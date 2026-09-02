@@ -12,6 +12,7 @@ const prompts: Record<Mode, string> = { mood: 'I want something that makes me ap
 const TASTE_STORAGE_KEY = 'dreamframe-taste-v1';
 const USAGE_STORAGE_KEY = 'dreamframe-usage-v1';
 const REQUEST_LIMIT = 5;
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const LIMIT_MESSAGE = 'DreamFrame is still a work-in-progress prototype. You’ve reached the limit of 5 recommendations for this browser. Thank you for trying it.';
 
 function readUsage() {
@@ -58,7 +59,7 @@ export default function Home() {
   }, [taste]);
 
   const currentTaste = useMemo(() => taste.find((entry) => entry.id === movie?.id), [movie?.id, taste]);
-  const limitReached = requestsUsed >= REQUEST_LIMIT;
+  const limitReached = IS_PRODUCTION && requestsUsed >= REQUEST_LIMIT;
 
   useEffect(() => {
     if (mode === 'mood' || query.trim().length < 2 || selectedMovie?.title === query) return;
@@ -91,8 +92,10 @@ export default function Home() {
     const rememberedTitles = rememberedTaste.map((entry) => entry.title);
     setLoading(true);
     setError('');
-    const nextUsage = Math.min(requestsUsed + 1, REQUEST_LIMIT);
-    writeUsage(nextUsage);
+    if (IS_PRODUCTION) {
+      const nextUsage = Math.min(requestsUsed + 1, REQUEST_LIMIT);
+      writeUsage(nextUsage);
+    }
     try {
       const response = await fetch('/api/recommend', {
         method: 'POST',
@@ -169,7 +172,7 @@ export default function Home() {
         <div className="input-row">
           {mode === 'mood' ? <textarea id="movie-prompt" value={query} maxLength={300} onChange={(e) => setQuery(e.target.value)} placeholder={prompts[mode]} rows={2} /> : <div className="movie-picker"><input id="movie-prompt" role="combobox" aria-autocomplete="list" value={query} maxLength={100} onChange={(e) => { const value = e.target.value; setQuery(value); setSelectedMovie(null); if (value.trim().length < 2) setSuggestions([]); }} placeholder={prompts[mode]} autoComplete="off" aria-expanded={suggestions.length > 0} aria-controls="movie-suggestions" />{(searchingMovies || suggestions.length > 0) && <div className="movie-suggestions" id="movie-suggestions" role="listbox">{searchingMovies && <p>Searching TMDB…</p>}{!searchingMovies && suggestions.map((suggestion) => <button type="button" role="option" aria-selected="false" key={suggestion.id} onClick={() => chooseMovie(suggestion)}>{suggestion.posterUrl ? <img src={suggestion.posterUrl} alt="" /> : <span className="suggestion-poster" />}<span><b>{suggestion.title}</b><small>{suggestion.year}</small></span></button>)}</div>}</div>}
           <button className="recommend-button" type="submit" disabled={loading || limitReached || (mode === 'mood' ? !query.trim() : mode === 'similar' ? !selectedMovie : favorites.length === 0)}>{loading ? 'Finding your film…' : limitReached ? 'Limit reached' : 'Find my film'} <span aria-hidden="true">→</span></button>
-        </div><div className="form-meta"><p className="hint">{mode === 'favorites' ? `${favorites.length}/5 favorites selected` : mode === 'mood' ? `${query.length}/300 characters` : 'Choose the exact film from the list.'}</p><p className="usage-count">{requestsUsed}/{REQUEST_LIMIT} recommendations used</p></div>
+        </div><div className="form-meta"><p className="hint">{mode === 'favorites' ? `${favorites.length}/5 favorites selected` : mode === 'mood' ? `${query.length}/300 characters` : 'Choose the exact film from the list.'}</p><p className="usage-count">{IS_PRODUCTION ? `${requestsUsed}/${REQUEST_LIMIT} recommendations used` : 'Local testing — unlimited'}</p></div>
         {error && <p className="form-error" role="alert">{error}</p>}
       </form>
     </section>
