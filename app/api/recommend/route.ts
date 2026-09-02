@@ -90,6 +90,16 @@ function permitsLowRating(query: string) {
   return BAD_MOVIE_REQUEST.test(query);
 }
 
+function normalizeMovieTitle(title: string) {
+  return title
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
 async function analyzeIntent(apiKey: string, body: RequestBody): Promise<Intent> {
   const response = await fetch(OPENAI_API, {
     method: 'POST',
@@ -140,6 +150,12 @@ export async function POST(request: NextRequest) {
     if (query.length > 300) return NextResponse.json({ error: 'Please keep your request under 300 characters.' }, { status: 400 });
     if ((body.favorites ?? []).length > 5) return NextResponse.json({ error: 'You can add up to 5 favorite films.' }, { status: 400 });
     const favorites = (body.favorites ?? []).filter(Boolean).slice(0, 5);
+    const excludedIds = new Set(body.excludeIds ?? []);
+    const excludedTitleKeys = new Set(
+      [...(body.excludedTitles ?? []), ...favorites]
+        .map(normalizeMovieTitle)
+        .filter(Boolean),
+    );
     const allowLowRating = permitsLowRating(query);
     if (!query && favorites.length === 0) return NextResponse.json({ error: 'Tell us how you feel or add a film you love.' }, { status: 400 });
     const allowance = consumeRequestAllowance(request);
@@ -173,7 +189,12 @@ export async function POST(request: NextRequest) {
       relatedUrl.searchParams.set('language', 'en-US');
       const related = await tmdbJson<{ results: TmdbMovie[] }>(relatedUrl);
       candidateTitles = related.results
-        .filter((movie) => movie.title !== source.title && (allowLowRating || (movie.vote_average ?? 0) >= MINIMUM_RATING))
+        .filter((movie) => (
+          movie.id !== source.id
+          && !excludedIds.has(movie.id)
+          && !excludedTitleKeys.has(normalizeMovieTitle(movie.title))
+          && (allowLowRating || (movie.vote_average ?? 0) >= MINIMUM_RATING)
+        ))
         .slice(0, 18)
         .map((movie) => movie.title);
       if (candidateTitles.length === 0) {
@@ -182,7 +203,12 @@ export async function POST(request: NextRequest) {
         similarUrl.searchParams.set('language', 'en-US');
         const similar = await tmdbJson<{ results: TmdbMovie[] }>(similarUrl);
         candidateTitles = similar.results
-          .filter((movie) => movie.title !== source.title && (allowLowRating || (movie.vote_average ?? 0) >= MINIMUM_RATING))
+          .filter((movie) => (
+            movie.id !== source.id
+            && !excludedIds.has(movie.id)
+            && !excludedTitleKeys.has(normalizeMovieTitle(movie.title))
+            && (allowLowRating || (movie.vote_average ?? 0) >= MINIMUM_RATING)
+          ))
           .slice(0, 18)
           .map((movie) => movie.title);
       }
@@ -190,18 +216,39 @@ export async function POST(request: NextRequest) {
     }
 
     const rejectedTitles = [...(body.excludedTitles ?? [])];
+    const rejectedTitleKeys = new Set(
+      [...rejectedTitles, ...favorites, sourceTitle]
+        .map(normalizeMovieTitle)
+        .filter(Boolean),
+    );
+    const rejectTitle = (title: string) => {
+      const key = normalizeMovieTitle(title);
+      if (!key || rejectedTitleKeys.has(key)) return;
+      rejectedTitleKeys.add(key);
+      rejectedTitles.push(title);
+    };
+
     for (let attempt = 0; attempt < 4; attempt += 1) {
       const intent = await analyzeIntent(openAiKey, { ...body, query, favorites, sourceTitle, candidateTitles, excludedTitles: rejectedTitles });
+      const intendedTitleKey = normalizeMovieTitle(intent.title);
+      if (!intendedTitleKey || rejectedTitleKeys.has(intendedTitleKey)) {
+        rejectTitle(intent.title);
+        continue;
+      }
+
       const searchUrl = new URL(`${TMDB_API}/search/movie`);
       searchUrl.searchParams.set('api_key', tmdbKey);
       searchUrl.searchParams.set('query', intent.title);
       searchUrl.searchParams.set('include_adult', 'false');
       searchUrl.searchParams.set('language', 'en-US');
       const search = await tmdbJson<{ results: TmdbMovie[] }>(searchUrl);
-      const eligibleResults = search.results.filter((item) => !(body.excludeIds ?? []).includes(item.id));
-      const movie = eligibleResults.find((item) => item.title.toLowerCase() === intent.title.toLowerCase()) ?? eligibleResults[0];
+      const movie = search.results.find((item) => (
+        !excludedIds.has(item.id)
+        && normalizeMovieTitle(item.title) === intendedTitleKey
+        && !rejectedTitleKeys.has(normalizeMovieTitle(item.title))
+      ));
       if (!movie) {
-        rejectedTitles.push(intent.title);
+        rejectTitle(intent.title);
         continue;
       }
 
@@ -209,8 +256,12 @@ export async function POST(request: NextRequest) {
       detailsUrl.searchParams.set('api_key', tmdbKey);
       detailsUrl.searchParams.set('language', 'en-US');
       const details = await tmdbJson<MovieDetails>(detailsUrl);
+      if (rejectedTitleKeys.has(normalizeMovieTitle(details.title))) {
+        rejectTitle(intent.title);
+        continue;
+      }
       if (!allowLowRating && details.vote_average < MINIMUM_RATING) {
-        rejectedTitles.push(details.title);
+        rejectTitle(details.title);
         continue;
       }
 
