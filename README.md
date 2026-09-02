@@ -18,7 +18,7 @@ I often look for movies by the feeling, theme, or state of mind I want to explor
 - Discovery based on a mood, a similar film, or favorite films
 - Recommendations guided by emotional tone, themes, and how a film may leave you feeling
 - Exact film selection with poster previews and release years
-- Real film details and poster artwork provided by TMDB
+- Real film details and distinctive alternative poster artwork from TMDB when available
 - Lightweight taste feedback remembered in the same browser
 - A dark, minimal interface
 
