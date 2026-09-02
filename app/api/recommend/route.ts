@@ -41,6 +41,16 @@ type MovieDetails = TmdbMovie & {
   vote_average: number;
 };
 
+type TmdbPoster = {
+  file_path: string;
+  width: number;
+  height: number;
+  aspect_ratio: number;
+  vote_average: number;
+  vote_count: number;
+  iso_639_1: string | null;
+};
+
 const intentSchema = {
   type: 'object',
   additionalProperties: false,
@@ -137,6 +147,33 @@ async function tmdbJson<T>(url: URL): Promise<T> {
   const response = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
   if (!response.ok) throw new Error(`TMDB request failed: ${response.status}`);
   return response.json() as Promise<T>;
+}
+
+function posterConfidence(poster: TmdbPoster) {
+  return poster.vote_average + Math.log2(poster.vote_count + 1) * 0.75;
+}
+
+async function selectPosterPath(movieId: number, defaultPath: string | null, tmdbKey: string) {
+  try {
+    const imagesUrl = new URL(`${TMDB_API}/movie/${movieId}/images`);
+    imagesUrl.searchParams.set('api_key', tmdbKey);
+    imagesUrl.searchParams.set('include_image_language', 'en,null');
+    const images = await tmdbJson<{ posters: TmdbPoster[] }>(imagesUrl);
+    const alternative = images.posters
+      .filter((poster) => (
+        poster.file_path !== defaultPath
+        && poster.width >= 780
+        && poster.height >= 1100
+        && poster.aspect_ratio >= 0.62
+        && poster.aspect_ratio <= 0.72
+        && (poster.vote_count >= 2 || poster.vote_average >= 4)
+      ))
+      .sort((a, b) => posterConfidence(b) - posterConfidence(a))[0];
+    return alternative?.file_path ?? defaultPath;
+  } catch (error) {
+    console.warn('Alternative poster selection failed; using TMDB default.', error);
+    return defaultPath;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -265,6 +302,7 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
+      const selectedPosterPath = await selectPosterPath(details.id, details.poster_path, tmdbKey);
       const feelings = intent.desiredFeelings.map((item) => item.toLowerCase());
       return NextResponse.json({
         id: details.id,
@@ -273,7 +311,7 @@ export async function POST(request: NextRequest) {
         runtime: details.runtime ? `${Math.floor(details.runtime / 60)}h ${details.runtime % 60}m` : 'Runtime unavailable',
         genres: details.genres.map((genre) => genre.name),
         overview: details.overview || 'No synopsis is available yet.',
-        posterUrl: details.poster_path ? `${POSTER_BASE}${details.poster_path}` : null,
+        posterUrl: selectedPosterPath ? `${POSTER_BASE}${selectedPosterPath}` : null,
         rating: details.vote_average,
         why: intent.why,
         themes: intent.themes,
