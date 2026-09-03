@@ -4,6 +4,12 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'Privacy — DreamFrame',
   description: 'A short, plain-language explanation of how the DreamFrame prototype handles information.',
+  alternates: { canonical: '/privacy' },
+  openGraph: {
+    url: '/privacy',
+    title: 'Privacy — DreamFrame',
+    description: 'A short, plain-language explanation of how the DreamFrame prototype handles information.',
+  },
 };
 
 export default function PrivacyPage() {

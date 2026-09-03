@@ -4,6 +4,12 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'The story behind DreamFrame',
   description: 'Why Lenka decided to build DreamFrame—a more emotional way to discover what to watch.',
+  alternates: { canonical: '/story' },
+  openGraph: {
+    url: '/story',
+    title: 'The story behind DreamFrame',
+    description: 'Why Lenka decided to build DreamFrame—a more emotional way to discover what to watch.',
+  },
 };
 
 export default function StoryPage() {
