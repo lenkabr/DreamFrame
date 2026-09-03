@@ -26,7 +26,7 @@ export default function PrivacyPage() {
         </section>
         <section>
           <h2>What DreamFrame remembers</h2>
-          <p>Your taste feedback and recommendation count are saved only in your browser. There are no user accounts or central taste profiles. Clearing this site’s browser data removes that information.</p>
+          <p>Your seen-film history and recommendation count are saved only in your browser. There are no user accounts or central profiles. Clearing this site’s browser data removes that information.</p>
         </section>
         <section>
           <h2>Basic technical information</h2>

@@ -19,7 +19,8 @@ I often look for movies by the feeling, theme, or state of mind I want to explor
 - Recommendations guided by emotional tone, themes, and how a film may leave you feeling
 - Exact film selection with poster previews and release years
 - Real film details and distinctive alternative poster artwork from TMDB when available
-- Lightweight taste feedback remembered in the same browser
+- Quick links to save a recommendation on Letterboxd or IMDb
+- Previously seen recommendations remembered in the same browser
 - A dark, minimal interface
 
 ## Current prototype limits
@@ -27,7 +28,7 @@ I often look for movies by the feeling, theme, or state of mind I want to explor
 - Up to 5 recommendations per browser
 - Up to 5 favorite films in one request
 - Mood descriptions of up to 300 characters
-- Taste feedback and the usage count stay in the browser; there are currently no user accounts
+- Seen-film history and the usage count stay in the browser; there are currently no user accounts
 
 DreamFrame is still in progress. Features, recommendations, limits, and the experience may change as the prototype develops.
 

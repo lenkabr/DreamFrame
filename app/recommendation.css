@@ -19,6 +19,57 @@
   background: #0b0b0b;
 }
 
+.save-links {
+  margin: 0 0 24px;
+}
+
+.save-links > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.save-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 13px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 550;
+  transition: border-color .2s, color .2s, background .2s, transform .15s;
+}
+
+.save-links .letterboxd-link {
+  color: #f5f7fa;
+  background: #172b3d;
+  border-color: #294862;
+}
+
+.save-links .letterboxd-link:hover {
+  color: #fff;
+  background: #203b52;
+  border-color: #3d6686;
+}
+
+.save-links .imdb-link {
+  color: #f5c518;
+  background: rgba(245, 197, 24, .12);
+  border-color: rgba(245, 197, 24, .4);
+}
+
+.save-links .imdb-link:hover {
+  color: #ffda45;
+  background: rgba(245, 197, 24, .19);
+  border-color: rgba(255, 218, 69, .65);
+}
+
+.save-links a:active {
+  transform: scale(.98);
+}
+
 .replacement-status {
   display: flex;
   align-items: center;
@@ -41,7 +92,6 @@
   animation: replacement-spin 0.8s linear infinite;
 }
 
-.taste-buttons button:disabled,
 .actions button:disabled {
   opacity: 0.55;
   cursor: wait;

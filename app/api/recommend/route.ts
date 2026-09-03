@@ -39,6 +39,7 @@ type MovieDetails = TmdbMovie & {
   runtime: number | null;
   genres: Array<{ id: number; name: string }>;
   vote_average: number;
+  imdb_id: string | null;
 };
 
 type TmdbPoster = {
@@ -312,6 +313,7 @@ export async function POST(request: NextRequest) {
         genres: details.genres.map((genre) => genre.name),
         overview: details.overview || 'No synopsis is available yet.',
         posterUrl: selectedPosterPath ? `${POSTER_BASE}${selectedPosterPath}` : null,
+        imdbId: details.imdb_id,
         rating: details.vote_average,
         why: intent.why,
         themes: intent.themes,

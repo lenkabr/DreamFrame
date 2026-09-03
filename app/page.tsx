@@ -1,15 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 
 type Mode = 'mood' | 'similar' | 'favorites';
-type RecommendedMovie = { id: number; title: string; year: string; runtime: string; genres: string[]; overview: string; posterUrl: string | null; why: string; themes: string[]; feelings: string[] };
+type RecommendedMovie = { id: number; title: string; year: string; runtime: string; genres: string[]; overview: string; posterUrl: string | null; imdbId: string | null; why: string; themes: string[]; feelings: string[] };
 type MovieSuggestion = { id: number; title: string; year: string; posterUrl: string | null };
-type TasteStatus = 'loved' | 'not-for-me' | 'seen';
-type TasteEntry = { id: number; title: string; status: TasteStatus; updatedAt: number };
+type SeenEntry = { id: number; title: string; status: 'seen'; updatedAt: number };
 const prompts: Record<Mode, string> = { mood: 'I want something that makes me appreciate life...', similar: 'Lost in Translation', favorites: 'Add a film you love' };
-const TASTE_STORAGE_KEY = 'dreamframe-taste-v1';
+const SEEN_STORAGE_KEY = 'dreamframe-taste-v1';
 const USAGE_STORAGE_KEY = 'dreamframe-usage-v1';
 const REQUEST_LIMIT = 5;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
@@ -49,16 +48,18 @@ export default function Home() {
   const [replacementMessage, setReplacementMessage] = useState('');
   const [error, setError] = useState('');
   const requestsUsed = useSyncExternalStore(subscribeUsage, readUsage, () => 0);
-  const [taste, setTaste] = useState<TasteEntry[]>(() => {
+  const [seenMovies, setSeenMovies] = useState<SeenEntry[]>(() => {
     if (typeof window === 'undefined') return [];
-    try { return JSON.parse(localStorage.getItem(TASTE_STORAGE_KEY) || '[]') as TasteEntry[]; } catch { return []; }
+    try {
+      const stored = JSON.parse(localStorage.getItem(SEEN_STORAGE_KEY) || '[]') as Array<SeenEntry & { status: string }>;
+      return stored.filter((entry): entry is SeenEntry => entry.status === 'seen');
+    } catch { return []; }
   });
 
   useEffect(() => {
-    localStorage.setItem(TASTE_STORAGE_KEY, JSON.stringify(taste));
-  }, [taste]);
+    localStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify(seenMovies));
+  }, [seenMovies]);
 
-  const currentTaste = useMemo(() => taste.find((entry) => entry.id === movie?.id), [movie?.id, taste]);
   const limitReached = IS_PRODUCTION && requestsUsed >= REQUEST_LIMIT;
 
   useEffect(() => {
@@ -79,17 +80,15 @@ export default function Home() {
     return () => { window.clearTimeout(timer); controller.abort(); };
   }, [mode, query, selectedMovie?.title]);
 
-  async function recommend(next = false, tasteOverride?: TasteEntry[]) {
+  async function recommend(next = false, seenOverride?: SeenEntry[]) {
     if (limitReached) {
       setError(LIMIT_MESSAGE);
       return;
     }
-    const rememberedTaste = tasteOverride ?? taste;
-    const requestFavorites = favorites;
-    const lovedTitles = rememberedTaste.filter((entry) => entry.status === 'loved').map((entry) => entry.title);
-    const tasteFavorites = Array.from(new Set([...requestFavorites, ...lovedTitles])).slice(0, 5);
-    const rememberedIds = rememberedTaste.map((entry) => entry.id);
-    const rememberedTitles = rememberedTaste.map((entry) => entry.title);
+    const rememberedSeen = seenOverride ?? seenMovies;
+    const requestFavorites = favorites.slice(0, 5);
+    const rememberedIds = rememberedSeen.map((entry) => entry.id);
+    const rememberedTitles = rememberedSeen.map((entry) => entry.title);
     setLoading(true);
     setError('');
     if (IS_PRODUCTION) {
@@ -105,7 +104,7 @@ export default function Home() {
           mode,
           query: mode === 'favorites' ? '' : query,
           sourceId: mode === 'similar' ? selectedMovie?.id : undefined,
-          favorites: tasteFavorites,
+          favorites: requestFavorites,
           excludeIds: Array.from(new Set([...rememberedIds, ...(next ? seenIds : [])])),
           excludedTitles: Array.from(new Set([...rememberedTitles, ...(next ? seenTitles : [])])),
         }),
@@ -124,17 +123,15 @@ export default function Home() {
     }
   }
 
-  async function rememberMovie(status: TasteStatus) {
+  async function markMovieSeen() {
     if (!movie || loading) return;
-    const updatedTaste = [...taste.filter((entry) => entry.id !== movie.id), { id: movie.id, title: movie.title, status, updatedAt: Date.now() }];
-    setTaste(updatedTaste);
-    if (status !== 'loved') {
-      setReplacementMessage(status === 'seen' ? 'Already seen — finding something new…' : 'Got it — finding a better match…');
-      try {
-        await recommend(true, updatedTaste);
-      } finally {
-        setReplacementMessage('');
-      }
+    const updatedSeen: SeenEntry[] = [...seenMovies.filter((entry) => entry.id !== movie.id), { id: movie.id, title: movie.title, status: 'seen', updatedAt: Date.now() }];
+    setSeenMovies(updatedSeen);
+    setReplacementMessage('Already seen — finding something new…');
+    try {
+      await recommend(true, updatedSeen);
+    } finally {
+      setReplacementMessage('');
     }
   }
 
@@ -184,20 +181,21 @@ export default function Home() {
           <div className="film-heading"><div><p className="meta">{movie.year} <span>•</span> {movie.runtime}</p><h2>{movie.title}</h2></div><div className="genres">{movie.genres.map((genre) => <span key={genre}>{genre}</span>)}</div></div>
           <p className="overview">{movie.overview}</p>
           <p className="movie-source">Movie data and artwork provided by <a href="https://www.themoviedb.org/" target="_blank" rel="noreferrer">TMDB</a>.</p>
+          <div className="save-links" aria-label="Save this film elsewhere">
+            <p className="section-label">Save for later</p>
+            <div>
+              <a className="letterboxd-link" href={`https://letterboxd.com/tmdb/${movie.id}/`} target="_blank" rel="noreferrer">Save on Letterboxd <span aria-hidden="true">↗</span></a>
+              {movie.imdbId && <a className="imdb-link" href={`https://www.imdb.com/title/${movie.imdbId}/`} target="_blank" rel="noreferrer">Save on IMDb <span aria-hidden="true">↗</span></a>}
+            </div>
+          </div>
           <div className="why"><p className="section-label">Why this matches</p><p>{movie.why}</p></div>
           <div className="tag-columns"><div><p className="section-label">Themes</p><div className="soft-tags">{movie.themes.map((tag) => <span key={tag}>{tag}</span>)}</div></div><div><p className="section-label">You’ll probably leave feeling</p><div className="feeling-list">{movie.feelings.map((tag) => <span key={tag}>✦ {tag}</span>)}</div></div></div>
-          <div className="taste-actions" aria-label="Remember this recommendation">
-            <p className="section-label">Help DreamFrame remember your taste</p>
-            {limitReached && <p className="usage-limit" role="status">{LIMIT_MESSAGE}</p>}
-            {replacementMessage && <div className="replacement-status" role="status"><span aria-hidden="true" />{replacementMessage}</div>}
-            <div className="taste-buttons">
-              <button type="button" disabled={loading} className={currentTaste?.status === 'loved' ? 'selected' : ''} onClick={() => rememberMovie('loved')}>♡ Love this</button>
-              <button type="button" disabled={loading || limitReached} onClick={() => rememberMovie('not-for-me')}>Not for me</button>
-              <button type="button" disabled={loading || limitReached} onClick={() => rememberMovie('seen')}>Already seen</button>
-            </div>
-            <small>{currentTaste?.status === 'loved' ? 'Saved. DreamFrame will use this as a taste signal.' : 'Remembered only in this browser.'}</small>
+          {limitReached && <p className="usage-limit" role="status">{LIMIT_MESSAGE}</p>}
+          {replacementMessage && <div className="replacement-status" role="status"><span aria-hidden="true" />{replacementMessage}</div>}
+          <div className="actions">
+            <button type="button" className="primary-action" disabled={loading || limitReached} onClick={() => recommend(true)}>{limitReached ? 'Limit reached' : loading ? 'Finding another film…' : 'Find another film'} <span>→</span></button>
+            <button type="button" className="secondary-action" disabled={loading || limitReached} onClick={markMovieSeen}>I’ve already seen this</button>
           </div>
-          <div className="actions"><button type="button" className="primary-action" disabled={loading || limitReached} onClick={() => recommend(true)}>{limitReached ? 'Limit reached' : loading ? 'Finding another film…' : 'Try another'} <span>→</span></button></div>
         </div>
       </article>
     </section>}
