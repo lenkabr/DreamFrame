@@ -20,7 +20,7 @@ I often look for movies by the feeling, theme, or state of mind I want to explor
 - Exact film selection with poster previews and release years
 - Real film details and distinctive alternative poster artwork from TMDB when available
 - Quick links to save a recommendation on Letterboxd or IMDb
-- Previously seen recommendations remembered in the same browser
+- An Already seen page for reviewing or removing films that DreamFrame should not recommend again
 - A dark, minimal interface
 
 ## Current prototype limits

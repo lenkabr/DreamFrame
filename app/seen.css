@@ -1,0 +1,23 @@
+.seen-page{min-height:100vh;background:var(--bg)}
+.seen-content{width:min(1120px,calc(100% - 44px));margin:0 auto;padding:clamp(75px,10vw,130px) 0 110px}
+.seen-heading{padding-bottom:54px;border-bottom:1px solid var(--line)}
+.seen-heading .story-kicker{margin-bottom:22px}
+.seen-heading h1{font-size:clamp(58px,9vw,104px)}
+.seen-heading>p:last-child{margin:25px 0 0;color:var(--muted);font-size:14px;line-height:1.6}
+.seen-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:28px 18px;padding:42px 0 60px}
+.seen-card{min-width:0}
+.seen-card>img,.seen-poster-empty{display:block;width:100%;aspect-ratio:2/3;object-fit:cover;background:#151515;border:1px solid #222;border-radius:10px}
+.seen-poster-empty{display:grid;place-items:center;color:#555;font-size:9px;text-transform:uppercase;letter-spacing:.1em}
+.seen-card-copy{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:15px 2px 0}
+.seen-card h2{margin:0;color:#e7e7e4;font-size:15px;line-height:1.25;letter-spacing:-.02em;font-weight:600}
+.seen-card p{margin:5px 0 0;color:#666;font-size:10px}
+.seen-card button{flex:none;margin-top:1px;padding:0;color:#666;background:transparent;border:0;border-bottom:1px solid #444;cursor:pointer;font-size:9px;line-height:1.5;transition:color .2s,border-color .2s}
+.seen-card button:hover{color:#fff;border-color:var(--accent)}
+.seen-empty{margin:42px 0 60px;padding:50px 24px;text-align:center;background:#101010;border:1px solid var(--line);border-radius:12px}
+.seen-empty p{margin:0 0 10px;color:#e9e9e5;font-size:22px;letter-spacing:-.03em}
+.seen-empty>span{display:block;color:#777;font-size:12px;line-height:1.6}
+.seen-empty a{display:inline-flex;gap:9px;margin-top:25px;color:#ddd;text-decoration:none;border-bottom:1px solid #555;padding-bottom:5px;font-size:11px}
+.seen-empty a:hover{color:#fff;border-color:var(--accent)}
+.seen-note{max-width:580px;margin:0;color:#5f5f5f;font-size:10px;line-height:1.65}
+@media(max-width:900px){.seen-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:620px){.seen-content{width:calc(100% - 36px);padding:60px 0 80px}.seen-heading{padding-bottom:38px}.seen-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:25px 12px;padding-top:30px}.seen-card h2{font-size:13px}.seen-card-copy{gap:8px}.seen-note{font-size:9px}}

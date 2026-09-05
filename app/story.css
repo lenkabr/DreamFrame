@@ -8,6 +8,9 @@
 
 .site-nav {
   justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 24px;
 }
 
 .site-nav a {
@@ -32,6 +35,12 @@
 .site-nav a span {
   color: var(--accent);
   font-size: 12px;
+}
+
+@media (max-width: 720px) {
+  .site-nav { gap: 14px; }
+  .site-nav a { font-size: 10px; }
+  .site-nav a:last-child { display: none; }
 }
 
 .story-page {

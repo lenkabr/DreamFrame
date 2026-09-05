@@ -17,7 +17,7 @@ export default function StoryPage() {
     <header className="site-header">
       <Link className="brand" href="/" aria-label="DreamFrame home"><img className="brand-logo" src="/dreamframe-logo-white.svg" alt="" /><span>DreamFrame</span></Link>
       <span className="tagline">Every feeling has a film.</span>
-      <nav className="site-nav" aria-label="Main navigation"><Link className="active" href="/story" aria-current="page">The story behind DreamFrame</Link></nav>
+      <nav className="site-nav" aria-label="Main navigation"><Link href="/seen">Already seen</Link><Link className="active" href="/story" aria-current="page">The story behind DreamFrame</Link></nav>
     </header>
 
     <article className="story-article">

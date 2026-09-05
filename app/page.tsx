@@ -6,7 +6,7 @@ import Link from 'next/link';
 type Mode = 'mood' | 'similar' | 'favorites';
 type RecommendedMovie = { id: number; title: string; year: string; runtime: string; genres: string[]; overview: string; posterUrl: string | null; imdbId: string | null; why: string; themes: string[]; feelings: string[] };
 type MovieSuggestion = { id: number; title: string; year: string; posterUrl: string | null };
-type SeenEntry = { id: number; title: string; status: 'seen'; updatedAt: number };
+type SeenEntry = { id: number; title: string; year?: string; posterUrl?: string | null; status: 'seen'; updatedAt: number };
 const prompts: Record<Mode, string> = { mood: 'I want something that makes me appreciate life...', similar: 'Lost in Translation', favorites: 'Add a film you love' };
 const SEEN_STORAGE_KEY = 'dreamframe-taste-v1';
 const USAGE_STORAGE_KEY = 'dreamframe-usage-v1';
@@ -125,7 +125,7 @@ export default function Home() {
 
   async function markMovieSeen() {
     if (!movie || loading) return;
-    const updatedSeen: SeenEntry[] = [...seenMovies.filter((entry) => entry.id !== movie.id), { id: movie.id, title: movie.title, status: 'seen', updatedAt: Date.now() }];
+    const updatedSeen: SeenEntry[] = [...seenMovies.filter((entry) => entry.id !== movie.id), { id: movie.id, title: movie.title, year: movie.year, posterUrl: movie.posterUrl, status: 'seen', updatedAt: Date.now() }];
     setSeenMovies(updatedSeen);
     setReplacementMessage('Already seen — finding something new…');
     try {
@@ -155,7 +155,7 @@ export default function Home() {
   }
 
   return <main>
-    <header className="site-header"><a className="brand" href="#top" aria-label="DreamFrame home"><img className="brand-logo" src="./dreamframe-logo-white.svg" alt="" /><span>DreamFrame</span></a><span className="tagline">Every feeling has a film.</span><nav className="site-nav" aria-label="Main navigation"><Link href="/story">The story behind DreamFrame <span aria-hidden="true">↗</span></Link></nav></header>
+    <header className="site-header"><a className="brand" href="#top" aria-label="DreamFrame home"><img className="brand-logo" src="./dreamframe-logo-white.svg" alt="" /><span>DreamFrame</span></a><span className="tagline">Every feeling has a film.</span><nav className="site-nav" aria-label="Main navigation"><Link href="/seen">Already seen</Link><Link href="/story">The story behind DreamFrame <span aria-hidden="true">↗</span></Link></nav></header>
     <section className="hero" id="top">
       <p className="eyebrow"><span /> One film. Chosen for you.</p>
       <h1>What do you feel<br />like <em>watching?</em></h1>
