@@ -48,17 +48,17 @@ export default function Home() {
   const [replacementMessage, setReplacementMessage] = useState('');
   const [error, setError] = useState('');
   const requestsUsed = useSyncExternalStore(subscribeUsage, readUsage, () => 0);
-  const [seenMovies, setSeenMovies] = useState<SeenEntry[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const stored = JSON.parse(localStorage.getItem(SEEN_STORAGE_KEY) || '[]') as Array<SeenEntry & { status: string }>;
-      return stored.filter((entry): entry is SeenEntry => entry.status === 'seen');
-    } catch { return []; }
-  });
+  const [seenMovies, setSeenMovies] = useState<SeenEntry[]>([]);
 
   useEffect(() => {
-    localStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify(seenMovies));
-  }, [seenMovies]);
+    try {
+      const stored = JSON.parse(localStorage.getItem(SEEN_STORAGE_KEY) || '[]') as Array<SeenEntry & { status?: string }>;
+      const remembered = stored.filter((entry): entry is SeenEntry => entry.status === 'seen' && Number.isFinite(entry.id) && Boolean(entry.title));
+      window.setTimeout(() => setSeenMovies(remembered), 0);
+    } catch {
+      // Leave the in-memory list empty without overwriting browser storage.
+    }
+  }, []);
 
   const limitReached = IS_PRODUCTION && requestsUsed >= REQUEST_LIMIT;
 
@@ -126,6 +126,7 @@ export default function Home() {
   async function markMovieSeen() {
     if (!movie || loading) return;
     const updatedSeen: SeenEntry[] = [...seenMovies.filter((entry) => entry.id !== movie.id), { id: movie.id, title: movie.title, year: movie.year, posterUrl: movie.posterUrl, status: 'seen', updatedAt: Date.now() }];
+    localStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify(updatedSeen));
     setSeenMovies(updatedSeen);
     setReplacementMessage('Already seen — finding something new…');
     try {
