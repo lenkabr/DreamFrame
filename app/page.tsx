@@ -10,9 +10,9 @@ type SeenEntry = { id: number; title: string; year?: string; posterUrl?: string 
 const prompts: Record<Mode, string> = { mood: 'I want something that makes me appreciate life...', similar: 'Lost in Translation', favorites: 'Add a film you love' };
 const SEEN_STORAGE_KEY = 'dreamframe-taste-v1';
 const USAGE_STORAGE_KEY = 'dreamframe-usage-v1';
-const REQUEST_LIMIT = 5;
+const REQUEST_LIMIT = 15;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
-const LIMIT_MESSAGE = 'DreamFrame is still a work-in-progress prototype. You’ve reached the limit of 5 recommendations for this browser. Thank you for trying it.';
+const LIMIT_MESSAGE = 'DreamFrame is still a work-in-progress prototype. You’ve reached the limit of 15 recommendations for this browser. Thank you for trying it.';
 
 function readUsage() {
   const stored = Number(localStorage.getItem(USAGE_STORAGE_KEY) || '0');

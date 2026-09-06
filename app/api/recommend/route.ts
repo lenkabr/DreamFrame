@@ -71,7 +71,7 @@ const intentSchema = {
 const GENRES = 'Action 28, Adventure 12, Animation 16, Comedy 35, Crime 80, Documentary 99, Drama 18, Family 10751, Fantasy 14, History 36, Horror 27, Music 10402, Mystery 9648, Romance 10749, Science Fiction 878, Thriller 53, War 10752, Western 37';
 const MINIMUM_RATING = 5;
 const BAD_MOVIE_REQUEST = /\b(so[ -]?bad[ -]?it['’]?s[ -]?good|deliberately bad|terrible movie|awful movie|worst movie|trash(?:y)? movie|laugh(?:ing)? at (?:how )?bad)\b/i;
-const SERVER_REQUEST_LIMIT = 5;
+const SERVER_REQUEST_LIMIT = 15;
 const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 type RateEntry = { count: number; resetAt: number };
 const rateLimitStore = new Map<string, RateEntry>();
@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
     if (!query && favorites.length === 0) return NextResponse.json({ error: 'Tell us how you feel or add a film you love.' }, { status: 400 });
     const allowance = consumeRequestAllowance(request);
     if (!allowance.allowed) {
-      return NextResponse.json({ error: 'DreamFrame is still a work-in-progress prototype. You’ve reached the limit of 5 recommendations. Thank you for trying it.' }, { status: 429, headers: { 'Retry-After': String(allowance.retryAfter) } });
+      return NextResponse.json({ error: 'DreamFrame is still a work-in-progress prototype. You’ve reached the limit of 15 recommendations. Thank you for trying it.' }, { status: 429, headers: { 'Retry-After': String(allowance.retryAfter) } });
     }
 
     let sourceTitle = '';
