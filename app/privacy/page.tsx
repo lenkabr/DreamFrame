@@ -32,7 +32,7 @@ export default function PrivacyPage() {
         </section>
         <section>
           <h2>What DreamFrame remembers</h2>
-          <p>Your seen-film history and recommendation count are saved only in your browser. There are no user accounts or central profiles. Clearing this site’s browser data removes that information.</p>
+          <p>Your seen-film history and recommendation count are saved only in your browser. If you import a Letterboxd file, the file itself is not saved; DreamFrame only keeps the films it successfully matches. There are no user accounts or central profiles. Clearing this site’s browser data removes that information.</p>
         </section>
         <section>
           <h2>Basic technical information</h2>
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
       </div>
 
       <p className="privacy-note">This notice may change as the prototype develops. External links, including LinkedIn and Instagram, follow their own privacy policies.</p>
-      <p className="privacy-updated">Last updated: 1 September 2026</p>
+      <p className="privacy-updated">Last updated: 8 September 2026</p>
     </article>
 
     <footer><span>DreamFrame</span><p>A calmer way to choose what to watch.</p><p><Link className="privacy-link active" href="/privacy" aria-current="page">Privacy</Link></p></footer>
