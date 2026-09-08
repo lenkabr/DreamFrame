@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="DreamFrame">
+  <rect width="64" height="64" rx="12" fill="#090909"/>
+  <path d="M3 10h15c10.5 0 17 7 17 17s-6.5 17-17 17H3Z" fill="#fff"/>
+  <path d="M12 18h5c6 0 9 3.5 9 9s-3 9-9 9h-5Z" fill="#090909"/>
+  <rect x="6" y="15" width="3.5" height="4.5" rx="1" fill="#090909"/>
+  <rect x="6" y="22" width="3.5" height="4.5" rx="1" fill="#090909"/>
+  <rect x="6" y="29" width="3.5" height="4.5" rx="1" fill="#090909"/>
+  <rect x="6" y="36" width="3.5" height="4.5" rx="1" fill="#090909"/>
+  <path d="M29 10h32l-3 9H41v8h15l-3 9H41v14l-12 4Z" fill="#fff"/>
+  <circle cx="53" cy="48" r="5" fill="#ef4b3f"/>
+</svg>
