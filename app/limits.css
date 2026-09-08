@@ -28,10 +28,104 @@
   line-height: 1.55;
 }
 
+.selection-progress {
+  margin: 5px 8px 8px;
+  padding: 14px 12px 12px;
+  border-top: 1px solid #242424;
+}
+
+.selection-track {
+  height: 2px;
+  overflow: hidden;
+  background: #252525;
+}
+
+.selection-track i {
+  display: block;
+  position: relative;
+  width: 34%;
+  height: 100%;
+  background: var(--accent);
+  box-shadow: 0 0 18px rgba(239, 75, 63, .65);
+  overflow: hidden;
+  transition: width .55s cubic-bezier(.2, .8, .2, 1);
+  animation: selection-pulse 1.15s ease-in-out infinite;
+}
+
+.selection-track i::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 42%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.78), transparent);
+  transform: translateX(-120%);
+  animation: selection-sweep 1.35s ease-in-out infinite;
+}
+
+.selection-track i.stage-1 { width: 67%; }
+.selection-track i.stage-2 { width: 100%; }
+
+.selection-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.selection-steps span {
+  color: #4f4f4f;
+  font-size: 9px;
+  letter-spacing: .03em;
+  transition: color .25s ease;
+}
+
+.selection-steps span.active { color: #d6d6d2; }
+.selection-steps span.complete { color: #7d7d79; }
+
+.selection-steps span.active::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin: 0 6px 1px 0;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 rgba(239, 75, 63, .55);
+  animation: selection-dot 1.15s ease-out infinite;
+}
+
+@keyframes selection-pulse {
+  0%, 100% { opacity: .62; }
+  50% { opacity: 1; }
+}
+
+@keyframes selection-sweep {
+  55%, 100% { transform: translateX(290%); }
+}
+
+@keyframes selection-dot {
+  0% { box-shadow: 0 0 0 0 rgba(239, 75, 63, .55); }
+  70%, 100% { box-shadow: 0 0 0 6px rgba(239, 75, 63, 0); }
+}
+
 @media (max-width: 520px) {
   .form-meta {
     align-items: flex-start;
     flex-direction: column;
     gap: 0;
   }
+
+  .selection-steps {
+    gap: 7px;
+  }
+
+  .selection-steps span {
+    font-size: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .selection-track i,
+  .selection-track i::after,
+  .selection-steps span.active::before { animation: none; }
 }
