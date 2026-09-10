@@ -50,12 +50,13 @@ async function matchFilm(film: ImportFilm, apiKey: string) {
     }
 
     if (!film.title) return null;
+    const year = film.year ?? '';
     const url = new URL(`${TMDB_API}/search/movie`);
     url.searchParams.set('api_key', apiKey);
     url.searchParams.set('query', film.title);
     url.searchParams.set('include_adult', 'false');
     url.searchParams.set('language', 'en-US');
-    if (/^\d{4}$/.test(film.year)) url.searchParams.set('year', film.year);
+    if (/^\d{4}$/.test(year)) url.searchParams.set('year', year);
 
     const response = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(5_000) });
     if (!response.ok) return null;
@@ -64,7 +65,7 @@ async function matchFilm(film: ImportFilm, apiKey: string) {
     const candidates = data.results.filter((result) => (
       normalize(result.title) === wanted || normalize(result.original_title ?? '') === wanted
     ));
-    const match = candidates.find((result) => result.release_date?.startsWith(film.year))
+    const match = candidates.find((result) => result.release_date?.startsWith(year))
       ?? candidates.sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))[0]
       ?? null;
     if (!match) return null;
