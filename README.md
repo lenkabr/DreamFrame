@@ -21,7 +21,7 @@ I often look for movies by the feeling, theme, or state of mind I want to explor
 - Real film details and distinctive alternative poster artwork from TMDB when available
 - Quick links to save a recommendation on Letterboxd or IMDb
 - An Already seen page for reviewing or removing films that DreamFrame should not recommend again
-- Letterboxd watch-history import, with TMDB matching and duplicate protection
+- Letterboxd and IMDb watch-history imports, with exact TMDB matching and duplicate protection
 - A dark, minimal interface
 
 ## Current prototype limits

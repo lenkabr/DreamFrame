@@ -4,7 +4,7 @@ const TMDB_API = 'https://api.themoviedb.org/3';
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 const MAX_BATCH_SIZE = 25;
 
-type ImportFilm = { title?: string; year?: string };
+type ImportFilm = { title?: string; year?: string; imdbId?: string };
 type SearchResult = {
   id: number;
   title: string;
@@ -24,8 +24,32 @@ function normalize(value: string) {
     .trim();
 }
 
-async function matchFilm(film: Required<ImportFilm>, apiKey: string) {
+function formatMatch(match: SearchResult, film: ImportFilm) {
+  return {
+    id: match.id,
+    title: match.title,
+    year: match.release_date?.slice(0, 4) || film.year || '—',
+    posterUrl: match.poster_path ? `${POSTER_BASE}${match.poster_path}` : null,
+    importedTitle: film.title || match.title,
+  };
+}
+
+async function matchFilm(film: ImportFilm, apiKey: string) {
   try {
+    if (film.imdbId && /^tt\d+$/.test(film.imdbId)) {
+      const findUrl = new URL(`${TMDB_API}/find/${film.imdbId}`);
+      findUrl.searchParams.set('api_key', apiKey);
+      findUrl.searchParams.set('external_source', 'imdb_id');
+      findUrl.searchParams.set('language', 'en-US');
+      const findResponse = await fetch(findUrl, { cache: 'no-store', signal: AbortSignal.timeout(5_000) });
+      if (findResponse.ok) {
+        const found = await findResponse.json() as { movie_results?: SearchResult[] };
+        const exactMatch = found.movie_results?.[0];
+        if (exactMatch) return formatMatch(exactMatch, film);
+      }
+    }
+
+    if (!film.title) return null;
     const url = new URL(`${TMDB_API}/search/movie`);
     url.searchParams.set('api_key', apiKey);
     url.searchParams.set('query', film.title);
@@ -45,13 +69,7 @@ async function matchFilm(film: Required<ImportFilm>, apiKey: string) {
       ?? null;
     if (!match) return null;
 
-    return {
-      id: match.id,
-      title: match.title,
-      year: match.release_date?.slice(0, 4) || film.year || '—',
-      posterUrl: match.poster_path ? `${POSTER_BASE}${match.poster_path}` : null,
-      importedTitle: film.title,
-    };
+    return formatMatch(match, film);
   } catch {
     return null;
   }
@@ -64,8 +82,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as { films?: ImportFilm[] };
     const films = (body.films ?? [])
-      .map((film) => ({ title: film.title?.trim() ?? '', year: film.year?.trim() ?? '' }))
-      .filter((film) => film.title && film.title.length <= 150)
+      .map((film) => ({ title: film.title?.trim() ?? '', year: film.year?.trim() ?? '', imdbId: film.imdbId?.trim() ?? '' }))
+      .filter((film) => (film.title && film.title.length <= 150) || /^tt\d+$/.test(film.imdbId))
       .slice(0, MAX_BATCH_SIZE);
     if (films.length === 0) return NextResponse.json({ error: 'No films were supplied.' }, { status: 400 });
 

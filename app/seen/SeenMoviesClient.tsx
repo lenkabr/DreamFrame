@@ -13,7 +13,8 @@ type SeenEntry = {
 };
 
 type MovieSuggestion = { id: number; title: string; year: string; posterUrl: string | null };
-type CsvFilm = { title: string; year: string };
+type ImportSource = 'letterboxd' | 'imdb';
+type CsvFilm = { title: string; year: string; imdbId?: string };
 type ImportMatch = MovieSuggestion & { importedTitle: string };
 const STORAGE_KEY = 'dreamframe-taste-v1';
 const IMPORT_BATCH_SIZE = 25;
@@ -66,6 +67,30 @@ function extractLetterboxdFilms(text: string): CsvFilm[] {
   return [...unique.values()];
 }
 
+function extractImdbFilms(text: string): CsvFilm[] {
+  const rows = parseCsv(text);
+  if (rows.length < 2) return [];
+  const headers = rows[0].map((header) => header.trim().toLowerCase().replace(/^\uFEFF/, ''));
+  const titleIndex = headers.findIndex((header) => ['title', 'name'].includes(header));
+  const yearIndex = headers.indexOf('year');
+  const idIndex = headers.findIndex((header) => ['const', 'imdb id', 'imdbid'].includes(header));
+  const typeIndex = headers.findIndex((header) => ['title type', 'type'].includes(header));
+  if (titleIndex < 0 && idIndex < 0) return [];
+
+  const unique = new Map<string, CsvFilm>();
+  rows.slice(1).forEach((row) => {
+    const title = titleIndex >= 0 ? row[titleIndex]?.trim() ?? '' : '';
+    const year = yearIndex >= 0 ? row[yearIndex]?.trim() ?? '' : '';
+    const imdbId = idIndex >= 0 ? row[idIndex]?.trim() ?? '' : '';
+    const titleType = typeIndex >= 0 ? row[typeIndex]?.trim().toLowerCase() ?? '' : '';
+    const isNotFilm = /series|episode|video game|podcast/.test(titleType);
+    if (!isNotFilm && (title || /^tt\d+$/.test(imdbId))) {
+      unique.set(imdbId || `${title.toLowerCase()}|${year}`, { title, year, imdbId: imdbId || undefined });
+    }
+  });
+  return [...unique.values()];
+}
+
 function readSeenMovies(): SeenEntry[] {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') as Array<SeenEntry & { status?: string }>;
@@ -76,7 +101,7 @@ function readSeenMovies(): SeenEntry[] {
 }
 
 export default function SeenMoviesClient() {
-  const [activeSource, setActiveSource] = useState<'letterboxd' | 'imdb' | null>(null);
+  const [activeSource, setActiveSource] = useState<ImportSource | null>(null);
   const [movies, setMovies] = useState<SeenEntry[]>([]);
   const [ready, setReady] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -121,23 +146,25 @@ export default function SeenMoviesClient() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   }
 
-  async function importLetterboxd(file: File) {
+  async function importFilms(file: File, source: ImportSource) {
     setImportError('');
     setImportMatches([]);
     setImportProgress(0);
     setImportFileName(file.name);
     if (!file.name.toLowerCase().endsWith('.csv')) {
-      setImportError('Choose the watched.csv file from your Letterboxd export.');
+      setImportError(source === 'letterboxd' ? 'Choose watched.csv from your Letterboxd export.' : 'Choose the CSV file exported from your IMDb Ratings.');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setImportError('That file is too large. Choose watched.csv from the export folder.');
+      setImportError('That file is too large. Choose the film-history CSV from your export.');
       return;
     }
 
-    const films = extractLetterboxdFilms(await file.text());
+    const films = source === 'letterboxd' ? extractLetterboxdFilms(await file.text()) : extractImdbFilms(await file.text());
     if (films.length === 0) {
-      setImportError('We couldn’t find any film titles. Make sure you selected watched.csv.');
+      setImportError(source === 'letterboxd'
+        ? 'We couldn’t find any film titles. Make sure you selected watched.csv.'
+        : 'We couldn’t find any films. Make sure you selected the CSV exported from Your Ratings or a watched-film list.');
       return;
     }
 
@@ -208,7 +235,7 @@ export default function SeenMoviesClient() {
           </div>
           <div className="import-sources" aria-label="Import source">
             <button type="button" className={`import-source letterboxd ${activeSource === 'letterboxd' ? 'active' : ''}`} aria-expanded={activeSource === 'letterboxd'} onClick={() => setActiveSource(activeSource === 'letterboxd' ? null : 'letterboxd')}>Letterboxd</button>
-            <button type="button" className={`import-source imdb ${activeSource === 'imdb' ? 'active' : ''}`} aria-expanded={activeSource === 'imdb'} onClick={() => setActiveSource(activeSource === 'imdb' ? null : 'imdb')}>IMDb <small>Coming next</small></button>
+            <button type="button" className={`import-source imdb ${activeSource === 'imdb' ? 'active' : ''}`} aria-expanded={activeSource === 'imdb'} onClick={() => setActiveSource(activeSource === 'imdb' ? null : 'imdb')}>IMDb</button>
           </div>
         </div>
 
@@ -221,16 +248,28 @@ export default function SeenMoviesClient() {
           <div className="import-action">
             <input id="letterboxd-file" className="sr-only" type="file" accept=".csv,text/csv" disabled={importing} onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) importLetterboxd(file);
+              if (file) importFilms(file, 'letterboxd');
               event.currentTarget.value = '';
             }} />
             <label htmlFor="letterboxd-file" className={importing ? 'disabled' : ''}>{importing ? 'Matching your films…' : movies.length > 0 ? 'Update watched films list' : 'Choose watched.csv'} <span aria-hidden="true">↑</span></label>
             <p>Your file isn’t saved. Only the matched film list is stored in this browser.</p>
           </div>
         </div>}
-        {activeSource === 'imdb' && <div className="import-coming-soon">
-          <p>IMDb import is coming next.</p>
-          <span>We’re building it on the same private, browser-only system as Letterboxd.</span>
+        {activeSource === 'imdb' && <div className="import-flow">
+          <ol>
+            <li><span>01</span><p>On IMDb, open <a href="https://www.imdb.com/list/ratings/" target="_blank" rel="noreferrer">Your Ratings</a> from your profile.</p></li>
+            <li><span>02</span><p>Select <strong>Actions</strong>, then <strong>Export</strong>, to download the CSV file.</p></li>
+            <li><span>03</span><p>Select that CSV in the upload panel. You can also use an exported IMDb list that contains only films you’ve watched.</p></li>
+          </ol>
+          <div className="import-action imdb-action">
+            <input id="imdb-file" className="sr-only" type="file" accept=".csv,text/csv" disabled={importing} onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) importFilms(file, 'imdb');
+              event.currentTarget.value = '';
+            }} />
+            <label htmlFor="imdb-file" className={importing ? 'disabled' : ''}>{importing ? 'Matching your films…' : movies.length > 0 ? 'Update watched films list' : 'Choose IMDb CSV'} <span aria-hidden="true">↑</span></label>
+            <p>Don’t import your Watchlist—it contains films you still plan to see. Your file itself isn’t saved.</p>
+          </div>
         </div>}
 
         {importing && <div className="import-progress" role="status">

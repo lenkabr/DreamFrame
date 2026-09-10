@@ -32,7 +32,7 @@ export default function PrivacyPage() {
         </section>
         <section>
           <h2>What DreamFrame remembers</h2>
-          <p>Your seen-film history and recommendation count are saved only in your browser. If you import a Letterboxd file, the file itself is not saved; DreamFrame only keeps the films it successfully matches. There are no user accounts or central profiles. Clearing this site’s browser data removes that information.</p>
+          <p>Your seen-film history and recommendation count are saved only in your browser. If you import a Letterboxd or IMDb file, the file itself is not saved; DreamFrame only keeps the films it successfully matches. There are no user accounts or central profiles. Clearing this site’s browser data removes that information.</p>
         </section>
         <section>
           <h2>Basic technical information</h2>

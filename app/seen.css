@@ -16,8 +16,6 @@
 .import-source.letterboxd:hover,.import-source.letterboxd.active{color:#fff;background:#203b52;border-color:#3d6686}
 .import-source.imdb{color:#f5c518;background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.4)}
 .import-source.imdb:hover,.import-source.imdb.active{color:#ffda45;background:rgba(245,197,24,.19);border-color:rgba(255,218,69,.65)}
-.import-source small{color:#666;font-size:8px;text-transform:uppercase;letter-spacing:.08em}
-.import-source.imdb small{color:inherit;opacity:.65}
 .import-flow{display:grid;grid-template-columns:1.2fr .8fr;gap:42px;margin-top:30px;padding-top:28px;border-top:1px solid #242424}
 .import-flow ol{display:grid;gap:17px;margin:0;padding:0;list-style:none}
 .import-flow li{display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:start}
@@ -28,6 +26,8 @@
 .import-action{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:22px;background:#151515;border:1px dashed #333;border-radius:10px}
 .import-action label{display:flex;justify-content:space-between;gap:18px;width:100%;padding:13px 15px;background:#efefeb;color:#0b0b0b;border-radius:8px;cursor:pointer;font-size:12px;font-weight:680}
 .import-action label:hover{background:#fff}
+.import-action.imdb-action label{background:#f5c518;color:#0b0b0b}
+.import-action.imdb-action label:hover{background:#ffda45}
 .import-action label.disabled{opacity:.45;cursor:wait}
 .import-action>p{margin:12px 2px 0;color:#666;font-size:10px;line-height:1.5}
 .import-coming-soon{margin-top:30px;padding:28px 0 4px;border-top:1px solid #242424}
