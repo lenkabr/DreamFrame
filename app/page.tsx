@@ -2,13 +2,13 @@
 
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
+import { readSeenMovies, updateSeenMovies, type SeenMovie } from '@/lib/seen-storage';
 
 type Mode = 'mood' | 'similar' | 'favorites';
 type RecommendedMovie = { id: number; title: string; year: string; runtime: string; genres: string[]; overview: string; posterUrl: string | null; imdbId: string | null; why: string; themes: string[]; feelings: string[] };
 type MovieSuggestion = { id: number; title: string; year: string; posterUrl: string | null };
-type SeenEntry = { id: number; title: string; year?: string; posterUrl?: string | null; status: 'seen'; updatedAt: number };
+type SeenEntry = SeenMovie;
 const prompts: Record<Mode, string> = { mood: 'I want something that makes me appreciate life...', similar: 'Lost in Translation', favorites: 'Add a film you love' };
-const SEEN_STORAGE_KEY = 'dreamframe-taste-v1';
 const USAGE_STORAGE_KEY = 'dreamframe-usage-v1';
 const REQUEST_LIMIT = 30;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
@@ -52,13 +52,7 @@ export default function Home() {
   const [seenMovies, setSeenMovies] = useState<SeenEntry[]>([]);
 
   useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem(SEEN_STORAGE_KEY) || '[]') as Array<SeenEntry & { status?: string }>;
-      const remembered = stored.filter((entry): entry is SeenEntry => entry.status === 'seen' && Number.isFinite(entry.id) && Boolean(entry.title));
-      window.setTimeout(() => setSeenMovies(remembered), 0);
-    } catch {
-      // Leave the in-memory list empty without overwriting browser storage.
-    }
+    window.setTimeout(() => setSeenMovies(readSeenMovies()), 0);
   }, []);
 
   const limitReached = IS_PRODUCTION && requestsUsed >= REQUEST_LIMIT;
@@ -133,8 +127,7 @@ export default function Home() {
 
   async function markMovieSeen() {
     if (!movie || loading) return;
-    const updatedSeen: SeenEntry[] = [...seenMovies.filter((entry) => entry.id !== movie.id), { id: movie.id, title: movie.title, year: movie.year, posterUrl: movie.posterUrl, status: 'seen', updatedAt: Date.now() }];
-    localStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify(updatedSeen));
+    const updatedSeen = updateSeenMovies((current) => [...current.filter((entry) => entry.id !== movie.id), { id: movie.id, title: movie.title, year: movie.year, posterUrl: movie.posterUrl, status: 'seen', updatedAt: Date.now() }]);
     setSeenMovies(updatedSeen);
     setReplacementMessage('Already seen — finding something new…');
     try {

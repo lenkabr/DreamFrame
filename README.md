@@ -20,7 +20,7 @@ I often look for movies by the feeling, theme, or state of mind I want to explor
 - Exact film selection with poster previews and release years
 - Real film details and distinctive alternative poster artwork from TMDB when available
 - Quick links to save a recommendation on Letterboxd or IMDb
-- An Already seen page for reviewing or removing films that DreamFrame should not recommend again
+- An Already seen page for reviewing or removing films that DreamFrame should not recommend again, with local backup and restore
 - Letterboxd and IMDb watch-history imports, with exact TMDB matching and duplicate protection
 - A dark, minimal interface
 
@@ -30,7 +30,7 @@ I often look for movies by the feeling, theme, or state of mind I want to explor
 - Up to 5 favorite films in one request
 - Mood descriptions of up to 300 characters
 - Seen-film history and the usage count stay in the browser; there are currently no user accounts
-- Imported watch history is stored only in the current browser
+- Imported watch history is stored only in the current browser, with an option to download a portable backup
 
 DreamFrame is still in progress. Features, recommendations, limits, and the experience may change as the prototype develops.
 

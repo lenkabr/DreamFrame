@@ -2,21 +2,14 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { createSeenBackup, mergeSeenMovies, readSeenBackup, readSeenMovies, updateSeenMovies, type SeenMovie } from '@/lib/seen-storage';
 
-type SeenEntry = {
-  id: number;
-  title: string;
-  year?: string;
-  posterUrl?: string | null;
-  status: 'seen';
-  updatedAt: number;
-};
+type SeenEntry = SeenMovie;
 
 type MovieSuggestion = { id: number; title: string; year: string; posterUrl: string | null };
 type ImportSource = 'letterboxd' | 'imdb';
 type CsvFilm = { title: string; year: string; imdbId?: string };
 type ImportMatch = MovieSuggestion & { importedTitle: string };
-const STORAGE_KEY = 'dreamframe-taste-v1';
 const IMPORT_BATCH_SIZE = 25;
 
 function parseCsv(text: string) {
@@ -91,15 +84,6 @@ function extractImdbFilms(text: string): CsvFilm[] {
   return [...unique.values()];
 }
 
-function readSeenMovies(): SeenEntry[] {
-  try {
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') as Array<SeenEntry & { status?: string }>;
-    return stored.filter((entry): entry is SeenEntry => entry.status === 'seen' && Number.isFinite(entry.id) && Boolean(entry.title));
-  } catch {
-    return [];
-  }
-}
-
 export default function SeenMoviesClient() {
   const [activeSource, setActiveSource] = useState<ImportSource | null>(null);
   const [movies, setMovies] = useState<SeenEntry[]>([]);
@@ -110,6 +94,8 @@ export default function SeenMoviesClient() {
   const [importTotal, setImportTotal] = useState(0);
   const [importError, setImportError] = useState('');
   const [importFileName, setImportFileName] = useState('');
+  const [backupMessage, setBackupMessage] = useState('');
+  const [backupError, setBackupError] = useState('');
 
   useEffect(() => {
     const stored = readSeenMovies();
@@ -130,20 +116,18 @@ export default function SeenMoviesClient() {
         return null;
       }
     })).then((details) => {
-      const enriched = stored.map((movie) => {
+      const enriched = updateSeenMovies((current) => current.map((movie) => {
         const match = details.find((detail) => detail?.id === movie.id);
         return match ? { ...movie, year: match.year, posterUrl: match.posterUrl } : movie;
-      });
+      }));
       setMovies(enriched);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(enriched));
     });
     return () => window.clearTimeout(readyTimer);
   }, []);
 
   function removeMovie(id: number) {
-    const updated = movies.filter((movie) => movie.id !== id);
+    const updated = updateSeenMovies((current) => current.filter((movie) => movie.id !== id));
     setMovies(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   }
 
   async function importFilms(file: File, source: ImportSource) {
@@ -193,7 +177,7 @@ export default function SeenMoviesClient() {
   }
 
   function confirmImport() {
-    const existingIds = new Set(movies.map((movie) => movie.id));
+    const existingIds = new Set(readSeenMovies().map((movie) => movie.id));
     const added = importMatches
       .filter((match) => !existingIds.has(match.id))
       .map<SeenEntry>((match) => ({
@@ -204,12 +188,44 @@ export default function SeenMoviesClient() {
         status: 'seen',
         updatedAt: Date.now(),
       }));
-    const updated = [...movies, ...added];
+    const updated = mergeSeenMovies(added);
     setMovies(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     setImportMatches([]);
     setImportTotal(0);
     setImportFileName('');
+  }
+
+  function downloadBackup() {
+    setBackupError('');
+    const current = readSeenMovies();
+    const blob = new Blob([createSeenBackup(current)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `dreamframe-watched-films-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    setBackupMessage(`Backup downloaded — ${current.length} films saved.`);
+  }
+
+  async function restoreBackup(file: File) {
+    setBackupMessage('');
+    setBackupError('');
+    if (!file.name.toLowerCase().endsWith('.json') || file.size > 5 * 1024 * 1024) {
+      setBackupError('Choose a DreamFrame watched-films backup file.');
+      return;
+    }
+    try {
+      const restored = readSeenBackup(await file.text());
+      const before = readSeenMovies().length;
+      const updated = mergeSeenMovies(restored);
+      setMovies(updated);
+      setBackupMessage(`Backup restored — ${updated.length - before} new films added, ${updated.length} saved in total.`);
+    } catch (caught) {
+      setBackupError(caught instanceof Error ? caught.message : 'The backup could not be restored.');
+    }
   }
 
   return <main className="seen-page">
@@ -289,6 +305,24 @@ export default function SeenMoviesClient() {
           </div>
           <p className="import-file">{importFileName}</p>
         </div>}
+      </section>
+
+      <section className="library-backup" aria-labelledby="backup-title">
+        <div>
+          <p className="import-kicker">Keep it safe</p>
+          <h2 id="backup-title">Back up your watched films</h2>
+          <p>Download a small DreamFrame file now, then restore it here if your browser list is ever cleared.</p>
+        </div>
+        <div className="backup-actions">
+          <button type="button" onClick={downloadBackup} disabled={movies.length === 0}>Download backup <span aria-hidden="true">↓</span></button>
+          <input id="dreamframe-backup" className="sr-only" type="file" accept=".json,application/json" onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) restoreBackup(file);
+            event.currentTarget.value = '';
+          }} />
+          <label htmlFor="dreamframe-backup">Restore backup <span aria-hidden="true">↑</span></label>
+        </div>
+        {(backupMessage || backupError) && <p className={`backup-status ${backupError ? 'error' : ''}`} role={backupError ? 'alert' : 'status'}>{backupError || backupMessage}</p>}
       </section>
 
       {ready && movies.length === 0 && <div className="seen-empty">
