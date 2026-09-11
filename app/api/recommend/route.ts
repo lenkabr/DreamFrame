@@ -93,7 +93,7 @@ const OPENAI_TIMEOUT_MS = 7_500;
 const TMDB_TIMEOUT_MS = 1_500;
 const POSTER_TIMEOUT_MS = 1_200;
 const BAD_MOVIE_REQUEST = /\b(so[ -]?bad[ -]?it['’]?s[ -]?good|deliberately bad|terrible movie|awful movie|worst movie|trash(?:y)? movie|laugh(?:ing)? at (?:how )?bad)\b/i;
-const SERVER_REQUEST_LIMIT = 15;
+const SERVER_REQUEST_LIMIT = 30;
 const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 type RateEntry = { count: number; resetAt: number };
 const rateLimitStore = new Map<string, RateEntry>();
@@ -255,7 +255,7 @@ export async function POST(request: NextRequest) {
     if (!query && favorites.length === 0) return NextResponse.json({ error: 'Tell us how you feel or add a film you love.' }, { status: 400 });
     const allowance = consumeRequestAllowance(request);
     if (!allowance.allowed) {
-      return NextResponse.json({ error: 'DreamFrame is still a work-in-progress prototype. You’ve reached the limit of 15 recommendations. Thank you for trying it.' }, { status: 429, headers: { 'Retry-After': String(allowance.retryAfter) } });
+      return NextResponse.json({ error: 'DreamFrame is still a work-in-progress prototype. You’ve reached the limit of 30 recommendations. Thank you for trying it.' }, { status: 429, headers: { 'Retry-After': String(allowance.retryAfter) } });
     }
 
     const sourceTitle = body.mode === 'similar' ? query : '';

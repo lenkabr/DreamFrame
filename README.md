@@ -26,7 +26,7 @@ I often look for movies by the feeling, theme, or state of mind I want to explor
 
 ## Current prototype limits
 
-- Up to 15 recommendations per browser
+- Up to 30 recommendations per browser
 - Up to 5 favorite films in one request
 - Mood descriptions of up to 300 characters
 - Seen-film history and the usage count stay in the browser; there are currently no user accounts
