@@ -249,13 +249,13 @@ export default function SeenMoviesClient() {
             <h2 id="import-title">{movies.length > 0 ? 'Update your watched films list' : 'Import films you’ve already seen'}</h2>
             <p>Use your existing film history so DreamFrame can avoid recommending movies you already know.</p>
           </div>
-          <div className="import-sources" aria-label="Import source">
+          {importMatches.length === 0 && <div className="import-sources" aria-label="Import source">
             <button type="button" className={`import-source letterboxd ${activeSource === 'letterboxd' ? 'active' : ''}`} aria-expanded={activeSource === 'letterboxd'} onClick={() => setActiveSource(activeSource === 'letterboxd' ? null : 'letterboxd')}>Letterboxd</button>
             <button type="button" className={`import-source imdb ${activeSource === 'imdb' ? 'active' : ''}`} aria-expanded={activeSource === 'imdb'} onClick={() => setActiveSource(activeSource === 'imdb' ? null : 'imdb')}>IMDb</button>
-          </div>
+          </div>}
         </div>
 
-        {activeSource === 'letterboxd' && <div className="import-flow">
+        {activeSource === 'letterboxd' && importMatches.length === 0 && <div className="import-flow">
           <ol>
             <li><span>01</span><p>Open <a href="https://letterboxd.com/user/exportdata/" target="_blank" rel="noreferrer">Letterboxd’s export page</a> and download your data.</p></li>
             <li><span>02</span><p>Unzip the downloaded folder and find <strong>watched.csv</strong>.</p></li>
@@ -271,7 +271,7 @@ export default function SeenMoviesClient() {
             <p>Your file isn’t saved. Only the matched film list is stored in this browser.</p>
           </div>
         </div>}
-        {activeSource === 'imdb' && <div className="import-flow">
+        {activeSource === 'imdb' && importMatches.length === 0 && <div className="import-flow">
           <ol>
             <li><span>01</span><p>On IMDb, open <a href="https://www.imdb.com/list/ratings/" target="_blank" rel="noreferrer">Your Ratings</a> from your profile.</p></li>
             <li><span>02</span><p>Select <strong>Actions</strong>, then <strong>Export</strong>, to download the CSV file.</p></li>
@@ -307,20 +307,16 @@ export default function SeenMoviesClient() {
         </div>}
       </section>
 
-      <section className="library-backup" aria-labelledby="backup-title">
-        <div>
-          <p className="import-kicker">Keep it safe</p>
-          <h2 id="backup-title">Back up your watched films</h2>
-          <p>Download a small DreamFrame file now, then restore it here if your browser list is ever cleared.</p>
-        </div>
+      <section className="library-backup" aria-label="Watched films backup">
+        <p><span>Backup</span> Save a copy of your watched-film list.</p>
         <div className="backup-actions">
-          <button type="button" onClick={downloadBackup} disabled={movies.length === 0}>Download backup <span aria-hidden="true">↓</span></button>
+          <button type="button" onClick={downloadBackup} disabled={movies.length === 0}>Download <span aria-hidden="true">↓</span></button>
           <input id="dreamframe-backup" className="sr-only" type="file" accept=".json,application/json" onChange={(event) => {
             const file = event.target.files?.[0];
             if (file) restoreBackup(file);
             event.currentTarget.value = '';
           }} />
-          <label htmlFor="dreamframe-backup">Restore backup <span aria-hidden="true">↑</span></label>
+          <label htmlFor="dreamframe-backup">Restore <span aria-hidden="true">↑</span></label>
         </div>
         {(backupMessage || backupError) && <p className={`backup-status ${backupError ? 'error' : ''}`} role={backupError ? 'alert' : 'status'}>{backupError || backupMessage}</p>}
       </section>
