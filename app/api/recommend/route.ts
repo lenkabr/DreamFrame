@@ -89,9 +89,9 @@ const intentSchema = {
 const GENRES = 'Action 28, Adventure 12, Animation 16, Comedy 35, Crime 80, Documentary 99, Drama 18, Family 10751, Fantasy 14, History 36, Horror 27, Music 10402, Mystery 9648, Romance 10749, Science Fiction 878, Thriller 53, War 10752, Western 37';
 const MINIMUM_RATING = 5;
 const MINIMUM_VOTE_COUNT = 30;
-const OPENAI_TIMEOUT_MS = 7_500;
+const OPENAI_TIMEOUT_MS = 8_500;
 const TMDB_TIMEOUT_MS = 1_500;
-const POSTER_TIMEOUT_MS = 1_200;
+const POSTER_TIMEOUT_MS = 650;
 const BAD_MOVIE_REQUEST = /\b(so[ -]?bad[ -]?it['’]?s[ -]?good|deliberately bad|terrible movie|awful movie|worst movie|trash(?:y)? movie|laugh(?:ing)? at (?:how )?bad)\b/i;
 const SERVER_REQUEST_LIMIT = 30;
 const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -141,6 +141,7 @@ async function analyzeIntent(apiKey: string, body: RequestBody): Promise<Intent>
     body: JSON.stringify({
       model: 'gpt-5-mini',
       store: false,
+      prompt_cache_key: 'dreamframe-recommendation-v1',
       reasoning: { effort: 'minimal' },
       max_output_tokens: 900,
       instructions: `You are DreamFrame's film curator. Interpret the emotional intent and return 5 or 6 real, released feature films ranked from strongest to weakest match. Never include the source film, a favorite, or an excluded title. Favorites are taste references only. When a verified candidate list is supplied for Similar mode, choose only from that list and return titles exactly.
@@ -239,6 +240,29 @@ async function verifyCandidate(
   }
 }
 
+async function firstVerifiedCandidate(
+  candidates: Candidate[],
+  tmdbKey: string,
+  excludedIds: Set<number>,
+  excludedTitleKeys: Set<string>,
+  allowLowRating: boolean,
+) {
+  // Begin all checks together, but stop waiting as soon as the highest-ranked
+  // candidate that can be confirmed is known.
+  const checks = candidates.map((candidate) => (
+    verifyCandidate(candidate, tmdbKey, excludedIds, excludedTitleKeys, allowLowRating)
+  ));
+  for (const check of checks) {
+    const verified = await check;
+    if (verified) return verified;
+  }
+  return null;
+}
+
+function isTimeout(error: unknown) {
+  return error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError');
+}
+
 export async function POST(request: NextRequest) {
   const openAiKey = process.env.OPENAI_API_KEY;
   const tmdbKey = process.env.TMDB_API_KEY;
@@ -267,11 +291,17 @@ export async function POST(request: NextRequest) {
         .map(normalizeMovieTitle)
         .filter(Boolean),
     );
-    const intent = await analyzeIntent(openAiKey, { ...body, query, favorites, sourceTitle, candidateTitles });
-    const verified = await Promise.all(intent.candidates.map((candidate) => (
-      verifyCandidate(candidate, tmdbKey, excludedIds, finalExcludedTitleKeys, allowLowRating)
-    )));
-    const match = verified.find(Boolean);
+    let intent: Intent;
+    try {
+      intent = await analyzeIntent(openAiKey, { ...body, query, favorites, sourceTitle, candidateTitles });
+    } catch (error) {
+      if (isTimeout(error)) {
+        console.warn('Recommendation analysis timed out.');
+        return NextResponse.json({ error: 'DreamFrame took too long to choose a film. Please try again.' }, { status: 504 });
+      }
+      throw error;
+    }
+    const match = await firstVerifiedCandidate(intent.candidates, tmdbKey, excludedIds, finalExcludedTitleKeys, allowLowRating);
     if (!match) return NextResponse.json({ error: 'No strong match this time. Try describing what you want a little differently.' }, { status: 404 });
 
     const { candidate, details } = match;

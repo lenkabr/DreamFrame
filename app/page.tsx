@@ -9,6 +9,11 @@ type RecommendedMovie = { id: number; title: string; year: string; runtime: stri
 type MovieSuggestion = { id: number; title: string; year: string; posterUrl: string | null };
 type SeenEntry = SeenMovie;
 const prompts: Record<Mode, string> = { mood: 'I want something that makes me appreciate life...', similar: 'Lost in Translation', favorites: 'Add a film you love' };
+const loadingSteps: Record<Mode, string[]> = {
+  mood: ['Understanding your mood', 'Checking real films', 'Choosing your match'],
+  similar: ['Reading the film’s emotional tone', 'Comparing themes and atmosphere', 'Choosing the closest match'],
+  favorites: ['Reading your film taste', 'Finding what your favorites share', 'Choosing your match'],
+};
 const USAGE_STORAGE_KEY = 'dreamframe-usage-v1';
 const REQUEST_LIMIT = 30;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
@@ -46,6 +51,7 @@ export default function Home() {
   const [seenTitles, setSeenTitles] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState(0);
+  const [submittedMode, setSubmittedMode] = useState<Mode>('mood');
   const [replacementMessage, setReplacementMessage] = useState('');
   const [error, setError] = useState('');
   const requestsUsed = useSyncExternalStore(subscribeUsage, readUsage, () => 0);
@@ -85,6 +91,7 @@ export default function Home() {
     const rememberedIds = rememberedSeen.map((entry) => entry.id);
     const rememberedTitles = rememberedSeen.map((entry) => entry.title);
     setLoading(true);
+    setSubmittedMode(mode);
     setLoadingStage(0);
     setError('');
     const stageTimers = [
@@ -99,7 +106,7 @@ export default function Home() {
       const response = await fetch('/api/recommend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(11_000),
         body: JSON.stringify({
           mode,
           query: mode === 'favorites' ? '' : query,
@@ -175,7 +182,7 @@ export default function Home() {
         {loading && <div className="selection-progress" role="status" aria-live="polite">
           <div className="selection-track" aria-hidden="true"><i className={`stage-${loadingStage}`} /></div>
           <div className="selection-steps">
-            {['Understanding your mood', 'Checking real films', 'Choosing your match'].map((label, index) => <span key={label} className={index < loadingStage ? 'complete' : index === loadingStage ? 'active' : ''}>{label}</span>)}
+            {loadingSteps[submittedMode].map((label, index) => <span key={label} className={index < loadingStage ? 'complete' : index === loadingStage ? 'active' : ''}>{label}</span>)}
           </div>
         </div>}
         {error && <p className="form-error" role="alert">{error}</p>}
