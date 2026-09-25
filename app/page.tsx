@@ -3,6 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { readSeenMovies, updateSeenMovies, type SeenMovie } from '@/lib/seen-storage';
+import { readUsage, writeUsage } from '@/lib/usage-storage';
 
 type Mode = 'mood' | 'similar' | 'favorites';
 type RecommendedMovie = { id: number; title: string; year: string; runtime: string; genres: string[]; overview: string; posterUrl: string | null; imdbId: string | null; why: string; themes: string[]; feelings: string[] };
@@ -14,15 +15,9 @@ const loadingSteps: Record<Mode, string[]> = {
   similar: ['Reading the film’s emotional tone', 'Comparing themes and atmosphere', 'Choosing the closest match'],
   favorites: ['Reading your film taste', 'Finding what your favorites share', 'Choosing your match'],
 };
-const USAGE_STORAGE_KEY = 'dreamframe-usage-v1';
 const REQUEST_LIMIT = 30;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const LIMIT_MESSAGE = 'DreamFrame is still a work-in-progress prototype. You’ve reached the limit of 30 recommendations for this browser. Thank you for trying it.';
-
-function readUsage() {
-  const stored = Number(localStorage.getItem(USAGE_STORAGE_KEY) || '0');
-  return Number.isFinite(stored) ? Math.min(Math.max(stored, 0), REQUEST_LIMIT) : 0;
-}
 
 function subscribeUsage(callback: () => void) {
   const handleChange = () => callback();
@@ -32,11 +27,6 @@ function subscribeUsage(callback: () => void) {
     window.removeEventListener('storage', handleChange);
     window.removeEventListener('dreamframe-usage-change', handleChange);
   };
-}
-
-function writeUsage(value: number) {
-  localStorage.setItem(USAGE_STORAGE_KEY, String(value));
-  window.dispatchEvent(new Event('dreamframe-usage-change'));
 }
 
 export default function Home() {
@@ -54,7 +44,7 @@ export default function Home() {
   const [submittedMode, setSubmittedMode] = useState<Mode>('mood');
   const [replacementMessage, setReplacementMessage] = useState('');
   const [error, setError] = useState('');
-  const requestsUsed = useSyncExternalStore(subscribeUsage, readUsage, () => 0);
+  const requestsUsed = useSyncExternalStore(subscribeUsage, () => readUsage(REQUEST_LIMIT), () => 0);
   const [seenMovies, setSeenMovies] = useState<SeenEntry[]>([]);
 
   useEffect(() => {
