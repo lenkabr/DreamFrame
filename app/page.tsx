@@ -163,7 +163,7 @@ export default function Home() {
     setSuggestions([]);
   }
 
-  return <main>
+  return <main className="home-page">
     <header className="site-header"><a className="brand" href="#top" aria-label="DreamFrame home"><img className="brand-logo" src="./dreamframe-logo-white.svg" alt="" /><span>DreamFrame</span></a><span className="tagline">Every feeling has a film.</span><nav className="site-nav" aria-label="Main navigation"><Link href="/seen">Already seen</Link><Link href="/story">The story behind DreamFrame <span aria-hidden="true">↗</span></Link></nav></header>
     <section className="hero" id="top">
       <p className="eyebrow"><span /> One film. Chosen for you.</p>

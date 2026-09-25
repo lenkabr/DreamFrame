@@ -5,6 +5,7 @@ import './story.css';
 import './limits.css';
 import './privacy.css';
 import './seen.css';
+import './dreamframe-theme.css';
 
 const SITE_URL = 'https://dream-frame-eight.vercel.app';
 const SITE_DESCRIPTION = 'Describe a feeling, your mood, how you want to feel, or the kind of story you would like to see. DreamFrame will find the one film worth your evening.';
