@@ -22,10 +22,10 @@ jobs:
       - name: Download the project
         uses: actions/checkout@v5
 
-      - name: Use Node.js 22
+      - name: Use Node.js 22.18
         uses: actions/setup-node@v5
         with:
-          node-version: 22.13.0
+          node-version: 22.18.0
           cache: npm
 
       - name: Install dependencies
