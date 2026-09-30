@@ -20,10 +20,10 @@ jobs:
 
     steps:
       - name: Download the project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Use Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22.13.0
           cache: npm
