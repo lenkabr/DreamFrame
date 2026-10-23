@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isRequestTimeout } from '@/lib/request-errors';
 
 const OPENAI_API = 'https://api.openai.com/v1/responses';
 const TMDB_API = 'https://api.themoviedb.org/3';
@@ -259,10 +260,6 @@ async function firstVerifiedCandidate(
   return null;
 }
 
-function isTimeout(error: unknown) {
-  return error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError');
-}
-
 export async function POST(request: NextRequest) {
   const openAiKey = process.env.OPENAI_API_KEY;
   const tmdbKey = process.env.TMDB_API_KEY;
@@ -295,7 +292,7 @@ export async function POST(request: NextRequest) {
     try {
       intent = await analyzeIntent(openAiKey, { ...body, query, favorites, sourceTitle, candidateTitles });
     } catch (error) {
-      if (isTimeout(error)) {
+      if (isRequestTimeout(error)) {
         console.warn('Recommendation analysis timed out.');
         return NextResponse.json({ error: 'DreamFrame took too long to choose a film. Please try again.' }, { status: 504 });
       }

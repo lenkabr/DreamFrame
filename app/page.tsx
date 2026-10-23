@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
+import { isRequestTimeout } from '@/lib/request-errors';
 import { readSeenMovies, updateSeenMovies, type SeenMovie } from '@/lib/seen-storage';
 import { readUsage, writeUsage } from '@/lib/usage-storage';
 
@@ -16,6 +17,7 @@ const loadingSteps: Record<Mode, string[]> = {
   favorites: ['Reading your film taste', 'Finding what your favorites share', 'Choosing your match'],
 };
 const REQUEST_LIMIT = 30;
+const RECOMMENDATION_TIMEOUT_MS = 14_000;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const LIMIT_MESSAGE = 'DreamFrame is still a work-in-progress prototype. You’ve reached the limit of 30 recommendations for this browser. Thank you for trying it.';
 
@@ -96,7 +98,10 @@ export default function Home() {
       const response = await fetch('/api/recommend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(11_000),
+        // The backend can spend up to 8.5s on OpenAI, then verify candidates
+        // and artwork with TMDB. Keep the browser deadline safely outside that
+        // budget so it receives the backend's useful response instead of aborting first.
+        signal: AbortSignal.timeout(RECOMMENDATION_TIMEOUT_MS),
         body: JSON.stringify({
           mode,
           query: mode === 'favorites' ? '' : query,
@@ -114,7 +119,7 @@ export default function Home() {
       window.setTimeout(() => document.getElementById('recommendation')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 40);
     } catch (caught) {
       setMovie(null);
-      const timedOut = caught instanceof DOMException && caught.name === 'TimeoutError';
+      const timedOut = isRequestTimeout(caught);
       setError(timedOut ? 'This search took too long. Please try again.' : caught instanceof Error ? caught.message : 'Could not load the movie.');
     } finally {
       stageTimers.forEach((timer) => window.clearTimeout(timer));
