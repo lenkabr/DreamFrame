@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { parseCandidateMovieTitle } from '@/lib/movie-title';
 import { isRequestTimeout } from '@/lib/request-errors';
 
 const OPENAI_API = 'https://api.openai.com/v1/responses';
@@ -34,6 +35,7 @@ type Intent = {
 type TmdbMovie = {
   id: number;
   title: string;
+  original_title?: string;
   overview: string;
   poster_path: string | null;
   release_date?: string;
@@ -211,20 +213,27 @@ async function verifyCandidate(
   allowLowRating: boolean,
 ) {
   try {
-    const intendedTitleKey = normalizeMovieTitle(candidate.title);
+    const parsedCandidate = parseCandidateMovieTitle(candidate.title);
+    const intendedTitleKey = normalizeMovieTitle(parsedCandidate.title);
     if (!intendedTitleKey || excludedTitleKeys.has(intendedTitleKey)) return null;
 
     const searchUrl = new URL(`${TMDB_API}/search/movie`);
     searchUrl.searchParams.set('api_key', tmdbKey);
-    searchUrl.searchParams.set('query', candidate.title);
+    searchUrl.searchParams.set('query', parsedCandidate.title);
     searchUrl.searchParams.set('include_adult', 'false');
     searchUrl.searchParams.set('language', 'en-US');
+    if (parsedCandidate.year) searchUrl.searchParams.set('year', parsedCandidate.year);
     const search = await tmdbJson<{ results: TmdbMovie[] }>(searchUrl);
-    const movie = search.results.find((item) => (
+    const exactMatches = search.results.filter((item) => (
       !excludedIds.has(item.id)
-      && normalizeMovieTitle(item.title) === intendedTitleKey
+      && (
+        normalizeMovieTitle(item.title) === intendedTitleKey
+        || normalizeMovieTitle(item.original_title ?? '') === intendedTitleKey
+      )
       && !excludedTitleKeys.has(normalizeMovieTitle(item.title))
     ));
+    const movie = exactMatches.find((item) => item.release_date?.startsWith(parsedCandidate.year))
+      ?? exactMatches[0];
     if (!movie) return null;
 
     const detailsUrl = new URL(`${TMDB_API}/movie/${movie.id}`);

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { parseCandidateMovieTitle } from '../lib/movie-title.ts';
 import { isRequestTimeout } from '../lib/request-errors.ts';
 import { createSeenBackup, mergeSeenMovies, readSeenBackup, readSeenMovies, replaceSeenMovies } from '../lib/seen-storage.ts';
 import { readUsage, resetUsage, writeUsage } from '../lib/usage-storage.ts';
@@ -60,4 +61,10 @@ test('browser and server abort errors are recognized as timeouts', () => {
   assert.equal(isRequestTimeout(timeout), true);
   assert.equal(isRequestTimeout(abort), true);
   assert.equal(isRequestTimeout(new Error('TMDB returned 500')), false);
+});
+
+test('recommendation titles keep an optional release year separate for TMDB', () => {
+  assert.deepEqual(parseCandidateMovieTitle('Get Out (2017)'), { title: 'Get Out', year: '2017' });
+  assert.deepEqual(parseCandidateMovieTitle('The Thing [1982]'), { title: 'The Thing', year: '1982' });
+  assert.deepEqual(parseCandidateMovieTitle('Annihilation'), { title: 'Annihilation', year: '' });
 });
